@@ -6,30 +6,46 @@
         xmlns:local="clr-namespace:WpfApp1"
         xmlns:fsldr="clr-namespace:FormattedSliderDemo"
         mc:Ignorable="d"
-        Title="Speedrun Load Remover 0.1" Height="551.2" Width="1223.4">
+        Title="Speedrun Load Remover 0.2" Height="720" Width="1051.6" MinWidth="1050" MinHeight="720">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="341*"/>
-            <RowDefinition Height="60*" />
-            <RowDefinition Height="121*"/>
+            <RowDefinition Height="449*"/>
+            <RowDefinition Height="59.2" />
+            <RowDefinition Height="116*"/>
+            <RowDefinition Height="42*"/>
         </Grid.RowDefinitions>
-        <MediaElement x:Name="MediaPlayer" LoadedBehavior="Manual" Margin="0,0,0.8,8.8" MediaOpened="MediaPlayer_MediaOpened" ScrubbingEnabled="True"/>
-        <fsldr:FormattedSlider x:Name="sldrVideoTime" HorizontalAlignment="Stretch" Margin="10,20.2,0,0" Grid.Row="1" VerticalAlignment="Top" PreviewMouseLeftButtonUp="sldrVideoTime_PreviewMouseLeftButtonUp" PreviewMouseLeftButtonDown="sldrVideoTime_PreviewMouseLeftButtonDown" AutoToolTipPlacement="TopLeft" Maximum="1500" TickPlacement="TopLeft" AutoToolTipFormat="{}{0}" IsMoveToPointEnabled="True" ValueChanged="sldrVideoTime_ValueChanged" PreviewMouseDown="sldrVideoTime_PreviewMouseDown" PreviewMouseUp="sldrVideoTime_PreviewMouseUp" />
-        <ListBox x:Name="lvList" HorizontalAlignment="Left" Height="100" Margin="10,11.2,0,0" Grid.Row="2" VerticalAlignment="Top" Width="390"/>
-        <StackPanel Orientation="Horizontal" Grid.Row="2" HorizontalAlignment="Center" Margin="428,14.2,246.8,-0.4" Width="542">
-            <Button x:Name="btnPlay" Content="Play" Click="btnPlay_Click" Width="50" Height="25" Margin="5"/>
-            <Button x:Name="btnStop" Content="Stop" Click="btnStop_Click" Width="50" Height="25" Margin="5"/>
-            <Button x:Name="btnMarkStart" Content="Mark S" Click="btnMarkStart_Click" Width="50" Height="25" Margin="5" RenderTransformOrigin="0.504,0.5"/>
-            <Button x:Name="btnMarkEnd" Content="Mark E" Click="btnMarkEnd_Click" Width="50" Height="25" Margin="5" RenderTransformOrigin="0.504,0.5"/>
-            <Button x:Name="btnMoveBack" Content="Back" Click="btnMoveBack_Click" Width="50" Height="25" Margin="5" RenderTransformOrigin="0.504,0.5"/>
-            <Button x:Name="btnMoveForward" Content="Forward" Click="btnMoveForward_Click" Width="50" Height="25" Margin="5"/>
-            <Button x:Name="btnOpen" Content="Open" Click="btnOpen_Click" Width="50" Height="25" Margin="5"/>
-            <Button x:Name="btnSnap" Content="Snap" Click="btnSnap_Click" Width="50" Height="25" Margin="5" RenderTransformOrigin="0.504,0.5"/>
-            <Button x:Name="btnCount" Content="Count" Click="btnCount_Click" Width="50" Height="25" Margin="5"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="39*" MinWidth="310"/>
+            <ColumnDefinition Width="33*" MinWidth="330"/>
+            <ColumnDefinition Width="33*" MinWidth="290"/>
 
+        </Grid.ColumnDefinitions>
+        <MediaElement x:Name="MediaPlayer" LoadedBehavior="Manual" Margin="0,0,0.8,8.8" MediaOpened="MediaPlayer_MediaOpened" ScrubbingEnabled="True" Grid.ColumnSpan="3"/>
+        <fsldr:FormattedSlider x:Name="sldrVideoTime" Margin="10,20.2,10,3" Grid.Row="1" VerticalAlignment="Top" PreviewMouseLeftButtonUp="sldrVideoTime_PreviewMouseLeftButtonUp" PreviewMouseLeftButtonDown="sldrVideoTime_PreviewMouseLeftButtonDown" AutoToolTipPlacement="TopLeft" Maximum="1500" TickPlacement="TopLeft" AutoToolTipFormat="{}{0}" IsMoveToPointEnabled="True" ValueChanged="sldrVideoTime_ValueChanged" IsEnabled="False" Grid.ColumnSpan="3" Height="24" IsSelectionRangeEnabled="True" />
+
+        <ListBox x:Name="lvList" Margin="10,15,9.6,4.4" Grid.Row="2" MinWidth="290"/>
+        <StackPanel VerticalAlignment="Center" Margin="2.4,10,2.2,10" Grid.Row="2" Grid.Column="1" Height="102" HorizontalAlignment="Center">
+            <DockPanel Margin="8" HorizontalAlignment="Center">
+                <Button x:Name="btnPlay" Content="Play" Click="btnPlay_Click" Width="50" Height="25" Margin="5" IsEnabled="False"/>
+                <Button x:Name="btnMoveBack" Content="&lt;" Click="btnMoveBack_Click" Width="50" Height="25" Margin="5" RenderTransformOrigin="0.504,0.5" IsEnabled="False"/>
+                <Button x:Name="btnMoveForward" Content="&gt;" Click="btnMoveForward_Click" Width="50" Height="25" Margin="5" IsEnabled="False"/>
+            </DockPanel>
+            <DockPanel Margin="8" HorizontalAlignment="Center">
+                <Button x:Name="btnOpen" Content="Open" Click="btnOpen_Click" Width="50" Height="25" Margin="5"/>
+                <Button x:Name="btnMarkStart" Content="Mark S" Click="btnMarkStart_Click" Width="50" Height="25" Margin="5" RenderTransformOrigin="0.504,0.5" IsEnabled="False"/>
+                <Button x:Name="btnMarkEnd" Content="Mark E" Click="btnMarkEnd_Click" Width="50" Height="25" Margin="5" RenderTransformOrigin="0.504,0.5" IsEnabled="False"/>
+                <Button x:Name="btnSnap" Content="Frame" Click="btnSnap_Click" Width="50" Height="25" Margin="5" RenderTransformOrigin="0.504,0.5" IsEnabled="False"/>
+                <Button x:Name="btnCount" Content="Count" Click="btnCount_Click" Width="50" Height="25" Margin="5" IsEnabled="False"/>
+            </DockPanel>
         </StackPanel>
-        <Image x:Name="templ_preview" HorizontalAlignment="Right" Height="100" Margin="0,14.2,-0.2,0" Grid.Row="2" VerticalAlignment="Top" Width="213"/>
-
+        <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="3" HorizontalAlignment="Right">
+            <Label Content="Frame:" VerticalAlignment="Center"/>
+            <Border BorderBrush="LightGray" BorderThickness="1" Margin="2,15,10,4.4" MinWidth="200" RenderTransformOrigin="0.5,0.5" MinHeight="100" VerticalAlignment="Bottom" Grid.Row="2" Grid.Column="2" Height="100" HorizontalAlignment="Right" Width="201">
+            <Image x:Name="templ_preview" Margin="2"/>
+        </Border>
+        </StackPanel>
+        <ProgressBar x:Name="progress_bar" Grid.ColumnSpan="3" Height="27" Margin="10,10,40,10" Grid.Row="3" VerticalAlignment="Bottom"/>
+        <Button x:Name="btnAbout" Content="?" Click="btnAbout_Click" HorizontalAlignment="Right" VerticalAlignment="Center" Grid.Row="3" Grid.Column="3" Margin="0,0,10,0" Width="20" Height="20"></Button>
 
     </Grid>
 </Window>

@@ -1,0 +1,49 @@
+﻿<Window x:Class="WpfApp1.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WpfApp1"
+        mc:Ignorable="d"
+        Title="About" Height="162.977" Width="263.2" ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="88*"/>
+            <RowDefinition Height="35*"/>
+        </Grid.RowDefinitions>
+        <TextBlock Name="TextBlockWithHyperlink" Margin="0,0,-0.2,5">
+            <Hyperlink 
+        NavigateUri="http://github.com/nickbrick/SpeedrunLoadRemover"
+        RequestNavigate="Hyperlink_RequestNavigate">
+            Speedrun Load Remover 
+        </Hyperlink>
+            version 0.2.0
+    <LineBreak/>
+            Made by ycarcomed<LineBreak/>
+    Testing, support, rubberducking by 
+    <Hyperlink 
+        NavigateUri="http://www.twitch.tv/7thace"
+        RequestNavigate="Hyperlink_RequestNavigate">
+        7thAce
+    </Hyperlink>
+    <LineBreak/>
+    Uses <Hyperlink 
+        NavigateUri="http://www.emgu.com"
+        RequestNavigate="Hyperlink_RequestNavigate">
+        Emgu CV
+    </Hyperlink>.
+    FormattedSlider by 
+    <Hyperlink 
+        NavigateUri="http://joshsmithonwpf.wordpress.com/2007/09/14/modifying-the-auto-tooltip-of-a-slider/"
+        RequestNavigate="Hyperlink_RequestNavigate">
+        Josh Smith
+    </Hyperlink>.
+    <LineBreak/>
+    Shoutouts to the JSRF community.
+    <LineBreak/>
+
+        </TextBlock>
+
+        <Button Content="Back" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0" Grid.Row="1" Height="19" Width="29" Click="Button_Click" />
+    </Grid>
+</Window>
