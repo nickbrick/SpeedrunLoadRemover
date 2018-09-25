@@ -27,8 +27,8 @@
         <StackPanel VerticalAlignment="Center" Margin="2.4,10,2.2,10" Grid.Row="2" Grid.Column="1" Height="102" HorizontalAlignment="Center">
             <DockPanel Margin="8" HorizontalAlignment="Center">
                 <Button x:Name="btnPlay" Content="Play" Click="btnPlay_Click" Width="50" Height="25" Margin="5" IsEnabled="False"/>
-                <Button x:Name="btnMoveBack" Content="&lt;" Click="btnMoveBack_Click" Width="50" Height="25" Margin="5" RenderTransformOrigin="0.504,0.5" IsEnabled="False"/>
-                <Button x:Name="btnMoveForward" Content="&gt;" Click="btnMoveForward_Click" Width="50" Height="25" Margin="5" IsEnabled="False"/>
+                <RepeatButton x:Name="btnMoveBack" Content="&lt;" Click="btnMoveBack_Click" Width="50" Height="25" Margin="5" RenderTransformOrigin="0.504,0.5" IsEnabled="False" Delay="200" Interval="50"/>
+                <RepeatButton x:Name="btnMoveForward" Content="&gt;" Click="btnMoveForward_Click" Width="50" Height="25" Margin="5" IsEnabled="False" MouseDown="btnMoveForward_MouseDown" Delay="200" Interval="50"/>
             </DockPanel>
             <DockPanel Margin="8" HorizontalAlignment="Center">
                 <Button x:Name="btnOpen" Content="Open" Click="btnOpen_Click" Width="50" Height="25" Margin="5"/>
@@ -44,7 +44,8 @@
             <Image x:Name="templ_preview" Margin="2"/>
         </Border>
         </StackPanel>
-        <ProgressBar x:Name="progress_bar" Grid.ColumnSpan="3" Height="27" Margin="10,10,40,10" Grid.Row="3" VerticalAlignment="Bottom"/>
+        <ProgressBar x:Name="progress_bar" Grid.ColumnSpan="3" Height="27" Margin="10,10,40,10" Grid.Row="3" VerticalAlignment="Bottom" ValueChanged="progress_bar_ValueChanged"/>
+        <Label x:Name="lbl_eta" Grid.Row="3" Grid.Column="1" Content="" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         <Button x:Name="btnAbout" Content="?" Click="btnAbout_Click" HorizontalAlignment="Right" VerticalAlignment="Center" Grid.Row="3" Grid.Column="3" Margin="0,0,10,0" Width="20" Height="20"></Button>
 
     </Grid>
