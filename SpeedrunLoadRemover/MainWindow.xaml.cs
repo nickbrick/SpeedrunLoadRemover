@@ -52,7 +52,6 @@ namespace WpfApp1 {
             sldrVideoTime.ApplyTemplate();
             System.Windows.Controls.Primitives.Thumb thumb = (sldrVideoTime.Template.FindName("PART_Track", sldrVideoTime) as System.Windows.Controls.Primitives.Track).Thumb;
             thumb.MouseEnter += new MouseEventHandler(thumb_MouseEnter);
-
             //GrabTemplate();
         }
 
@@ -352,14 +351,19 @@ namespace WpfApp1 {
             //btnMoveForward.RaiseEvent(e);
         }
 
-        private void btnOpen_Click(object sender, RoutedEventArgs e) {
+        private async void btnOpen_Click(object sender, RoutedEventArgs e) {
             // Configure open file dialog box 
             IsPlaying(false);
             btnPlay.Content = "Play";
             MediaPlayer.Stop();
             dialog.Filter = "Movie Files|*.mp4;*.mpg;*.avi;*.mov";
             dialog.FilterIndex = 1;
-            dialog.FileName = ""; // Default file name 
+            dialog.Title = "Select video file or paste YouTube video ID";
+            dialog.FileName = "File or YT ID"; // Default file name 
+            dialog.FileName = "C_VheAwZBuQ"; // Default file name 
+
+            
+            dialog.CheckFileExists = false;
             //dialog.DefaultExt = ".WMV"; // Default file extension 
             //dialog.Filter = "WMV file (.wm)|*.wmv"; // Filter files by extension  
 
@@ -368,20 +372,48 @@ namespace WpfApp1 {
 
             // Process open file dialog box results  
             if (result == true) {
-                // Open document 
-                video_path = dialog.FileName;
-                MediaPlayer.Source = new Uri(dialog.FileName);
-                sldrVideoTime.IsEnabled = true;
-                btnPlay.IsEnabled = true;
-                btnMoveBack.IsEnabled = true;
-                btnMoveForward.IsEnabled = true;
-                btnSnap.IsEnabled = true;
-                btnMarkStart.IsEnabled = true;
-                btnMarkEnd.IsEnabled = true;
+                Debug.WriteLine(dialog.FileName);
+                if (!System.IO.File.Exists(dialog.FileName)) { //no file exists, try youtube
+                    var video_fake_path = dialog.FileName.Split("/.\\".ToCharArray());
+                    var video_id = System.IO.Path.GetFileNameWithoutExtension(dialog.FileName);
+                    var url = "https://youtu.be/" + video_id;
+                    var yt = VideoLibrary.YouTube.Default;
+                    var t = Task.Factory.StartNew(new Action(() => {
+                        try {
+                            var video = yt.GetVideo(url);
+                            lvList.Dispatcher.Invoke((Action)(() => lvList.Items.Insert(0, "Downloading " + video.FullName + "...")));
 
-                InitVideo();
+                            video_path = System.IO.Path.GetDirectoryName(dialog.FileName) + "/" + video.FullName;
+                            System.IO.File.WriteAllBytes(video_path, video.GetBytes());
 
+                        }
+                        catch (Exception) {
+                        }
+                    }));
+                    await Task.WhenAll(t);
+                }
+                else { //file supposedly exists
+                    video_path = dialog.FileName;
+                }
+                if (System.IO.File.Exists(video_path)) { //file or youtube really exists
+                    // Open document 
+                    MediaPlayer.Source = new Uri(video_path);
+                    sldrVideoTime.IsEnabled = true;
+                    btnPlay.IsEnabled = true;
+                    btnMoveBack.IsEnabled = true;
+                    btnMoveForward.IsEnabled = true;
+                    btnSnap.IsEnabled = true;
+                    btnMarkStart.IsEnabled = true;
+                    btnMarkEnd.IsEnabled = true;
+
+                    InitVideo();
+
+                }
+            else {
+                    lvList.Items.Insert(0, "Bad filename or YouTube ID.");
             }
+            }
+
 
         }
         private void dispatcherTimer_Tick(object sender, EventArgs e) {
@@ -557,6 +589,14 @@ namespace WpfApp1 {
                 old_value = value;
 
             }
+        }
+
+        private void MediaPlayer_MediaEnded(object sender, RoutedEventArgs e) {
+            sldrVideoTime.Value = 0;
+            MediaPlayer.Stop();
+            IsPlaying(false);
+            btnPlay.Content = "Play";
+
         }
     }
 }
