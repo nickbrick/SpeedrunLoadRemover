@@ -196,17 +196,21 @@ namespace WpfApp1 {
             run_start_frame = 0;
             run_end_msec = video_length_msec;
             run_end_frame = (int)cap.GetCaptureProperty(CapProp.FrameCount);
-
+            run_length_msec = run_end_msec;
+            run_frame_count = run_end_frame;
             var width = cap.GetCaptureProperty(CapProp.FrameWidth);
             var height = cap.GetCaptureProperty(CapProp.FrameHeight);
             var duration = string.Format("{0:h\\:mm\\:ss\\.fff}", new TimeSpan(0, 0, 0, 0, (int)(video_frame_count * 1000 / framerate)));
-            lvList.Items.Insert(0, string.Format("Video loaded: Total runtime {0}, {1}x{2}@{3}", duration, width, height, (int)Math.Round(framerate)));
-            progress_bar.Maximum = video_frame_count;
-            sldrVideoTime.Value = 0;
-            sldrVideoTime.Ticks = new DoubleCollection();
-            sldrVideoTime.SelectionStart = run_start_msec;
-            sldrVideoTime.SelectionEnd = run_end_msec;
+            if (width + height + framerate != 0) {
+                lvList.Items.Insert(0, string.Format("Video loaded: Total runtime {0}, {1}x{2}@{3}", duration, width, height, (int)Math.Round(framerate)));
+                progress_bar.Maximum = video_frame_count;
+                sldrVideoTime.Maximum = video_length_msec;
+                sldrVideoTime.Value = 0;
+                sldrVideoTime.Ticks = new DoubleCollection();
+                sldrVideoTime.SelectionStart = run_start_msec;
+                sldrVideoTime.SelectionEnd = run_end_msec;
 
+            }
         }
 
         private void UpdateRunLengths() {
@@ -350,7 +354,12 @@ namespace WpfApp1 {
         private void btnMoveForward_MouseDown(object sender, MouseButtonEventArgs e) {
             //btnMoveForward.RaiseEvent(e);
         }
+        private static string MakeValidFileName(string name) {
+            string invalidChars = System.Text.RegularExpressions.Regex.Escape(new string(System.IO.Path.GetInvalidFileNameChars()));
+            string invalidRegStr = string.Format(@"([{0}]*\.+$)|([{0}]+)", invalidChars);
 
+            return System.Text.RegularExpressions.Regex.Replace(name, invalidRegStr, "_");
+        }
         private async void btnOpen_Click(object sender, RoutedEventArgs e) {
             // Configure open file dialog box 
             IsPlaying(false);
@@ -377,18 +386,46 @@ namespace WpfApp1 {
                     var video_fake_path = dialog.FileName.Split("/.\\".ToCharArray());
                     var video_id = System.IO.Path.GetFileNameWithoutExtension(dialog.FileName);
                     var url = "https://youtu.be/" + video_id;
-                    var yt = VideoLibrary.YouTube.Default;
+                    //var yt = VideoLibrary.YouTube.Default;
                     var t = Task.Factory.StartNew(new Action(() => {
                         try {
-                            var video = yt.GetVideo(url);
-                            lvList.Dispatcher.Invoke((Action)(() => lvList.Items.Insert(0, "Downloading " + video.FullName + "...")));
+                            using (var service = VideoLibrary.Client.For(VideoLibrary.YouTube.Default)) {
+                                using (var video = service.GetVideo(url)) {
+                                    video_path = System.IO.Path.GetDirectoryName(dialog.FileName) + "\\" + MakeValidFileName(video.FullName);
+                                    lvList.Dispatcher.Invoke((Action)(() => lvList.Items.Insert(0, "Downloading " + video.Title+ "...")));
+                                    using (var outFile = System.IO.File.OpenWrite(video_path)) {
+                                        using (var ps = new CGS.ProgressStream(outFile)) {
+                                            var streamLength = (long)video.StreamLength();
+                                            progress_bar.Dispatcher.Invoke((Action)(() => progress_bar.Maximum = streamLength));
+                                            ps.BytesMoved += (sender_, args) => {
+                                                //var percentage = args.StreamPosition * 100 / streamLength;
+                                                progress_bar.Dispatcher.Invoke((Action)(() => progress_bar.Value = args.StreamPosition));
 
-                            video_path = System.IO.Path.GetDirectoryName(dialog.FileName) + "/" + video.FullName;
-                            System.IO.File.WriteAllBytes(video_path, video.GetBytes());
+                                               //Debug.WriteLine($"{percentage}% of video downloaded");
+                                            };
+
+                                            video.Stream().CopyTo(ps);
+                                        }
+                                    }
+                                     //= yt.GetVideo(url);
+                                    Debug.WriteLine(video.FullName);
+                                    Debug.WriteLine(MakeValidFileName(video.FullName));
+                                } 
+
+                                    //var bytes = await video.GetBytesAsync();
+                                    //System.IO.File.WriteAllBytes(video_path, bytes);
+                            }
+                        }
+                    catch (System.Net.Http.HttpRequestException) {
+                            lvList.Dispatcher.Invoke((Action)(() => lvList.Items.Insert(0, "Unable to download video. Please try to download it manually and open from disk.")));
+                        }
+                        catch (System.InvalidOperationException) {
+                            lvList.Dispatcher.Invoke((Action)(() => lvList.Items.Insert(0, "Bad filename or YouTube ID1.")));
+                        }
+                    finally {
 
                         }
-                        catch (Exception) {
-                        }
+
                     }));
                     await Task.WhenAll(t);
                 }
@@ -405,13 +442,8 @@ namespace WpfApp1 {
                     btnSnap.IsEnabled = true;
                     btnMarkStart.IsEnabled = true;
                     btnMarkEnd.IsEnabled = true;
-
                     InitVideo();
-
                 }
-            else {
-                    lvList.Items.Insert(0, "Bad filename or YouTube ID.");
-            }
             }
 
 
@@ -434,10 +466,9 @@ namespace WpfApp1 {
         }
 
         private void MediaPlayer_MediaOpened(object sender, RoutedEventArgs e) {
-            if (MediaPlayer.NaturalDuration.HasTimeSpan) {
-                sldrVideoTime.Maximum = MediaPlayer.NaturalDuration.TimeSpan.TotalMilliseconds;
-
-            }
+            //if (MediaPlayer.NaturalDuration.HasTimeSpan) {
+            //    sldrVideoTime.Maximum = MediaPlayer.NaturalDuration.TimeSpan.TotalMilliseconds;
+            //}
         }
 
         private void sldrVideoTime_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e) {
@@ -522,9 +553,7 @@ namespace WpfApp1 {
             }
             GC.Collect();
             master_stopwatch.Stop();
-            progress_bar.Value = 0;
-            old_value = 0;
-            lbl_eta.Content = "";
+
             is_working = false;
 
             btnMarkStart.IsEnabled = true;
@@ -577,17 +606,23 @@ namespace WpfApp1 {
         }
 
         private void progress_bar_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
-            var value = (int)(progress_bar.Value / 1000);
+            //var value = (int)(progress_bar.Value / 1000);
+            int percent = (int)(progress_bar.Value * 100 / progress_bar.Maximum);
 
-            if (value > old_value) {
+            if (percent > old_value) {
                 var time_msec = progress_timer.ElapsedMilliseconds;
-                double rate = 1000 / (double)time_msec;
-                double eta_msec = (progress_bar.Maximum - progress_bar.Value) / rate;
+                //double rate = 1 / (double)time_msec;
+                double eta_msec = (1 - (progress_bar.Value / progress_bar.Maximum)) *100 * time_msec;
                 string eta = "Time left: " + string.Format("{0:h\\:mm\\:ss}", new TimeSpan(0, 0, 0, 0, (int)eta_msec));
                 lbl_eta.Content = eta;
                 progress_timer.Restart();
-                old_value = value;
+                old_value = percent;
 
+            }
+            if (progress_bar.Value >= progress_bar.Maximum) {
+                progress_bar.Value = 0;
+                old_value = 0;
+                lbl_eta.Content = "";
             }
         }
 

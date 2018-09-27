@@ -172,6 +172,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ProgressStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
