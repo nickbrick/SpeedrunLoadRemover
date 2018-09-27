@@ -184,6 +184,15 @@ namespace WpfApp1 {
         }
 
         private void InitVideo() {
+            MediaPlayer.Source = new Uri(video_path);
+            sldrVideoTime.IsEnabled = true;
+            btnPlay.IsEnabled = true;
+            btnMoveBack.IsEnabled = true;
+            btnMoveForward.IsEnabled = true;
+            btnSnap.IsEnabled = true;
+            btnMarkStart.IsEnabled = true;
+            btnMarkEnd.IsEnabled = true;
+
             VideoCapture cap = new VideoCapture(video_path);
             MediaPlayer.Play();
             MediaPlayer.Stop();
@@ -365,7 +374,7 @@ namespace WpfApp1 {
             IsPlaying(false);
             btnPlay.Content = "Play";
             MediaPlayer.Stop();
-            dialog.Filter = "Movie Files|*.mp4;*.mpg;*.avi;*.mov";
+            dialog.Filter = "Movie Files|*.mp4;*.mpg;*.avi;*.movl*.wmv";
             dialog.FilterIndex = 1;
             dialog.Title = "Select video file or paste YouTube video ID";
             dialog.FileName = "File or YT ID"; // Default file name 
@@ -420,9 +429,10 @@ namespace WpfApp1 {
                             lvList.Dispatcher.Invoke((Action)(() => lvList.Items.Insert(0, "Unable to download video. Please try to download it manually and open from disk.")));
                         }
                         catch (System.InvalidOperationException) {
-                            lvList.Dispatcher.Invoke((Action)(() => lvList.Items.Insert(0, "Bad filename or YouTube ID1.")));
+                            lvList.Dispatcher.Invoke((Action)(() => lvList.Items.Insert(0, "Bad filename or YouTube ID.")));
                         }
                     finally {
+                            video_path = dialog.FileName;
 
                         }
 
@@ -431,18 +441,9 @@ namespace WpfApp1 {
                 }
                 else { //file supposedly exists
                     video_path = dialog.FileName;
-                }
-                if (System.IO.File.Exists(video_path)) { //file or youtube really exists
-                    // Open document 
-                    MediaPlayer.Source = new Uri(video_path);
-                    sldrVideoTime.IsEnabled = true;
-                    btnPlay.IsEnabled = true;
-                    btnMoveBack.IsEnabled = true;
-                    btnMoveForward.IsEnabled = true;
-                    btnSnap.IsEnabled = true;
-                    btnMarkStart.IsEnabled = true;
-                    btnMarkEnd.IsEnabled = true;
-                    InitVideo();
+                    if (new System.IO.FileInfo(video_path).Length > 0)  { //file or youtube really exists
+                        InitVideo();
+                    }
                 }
             }
 
