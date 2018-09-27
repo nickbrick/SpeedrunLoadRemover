@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:WpfApp1"
         xmlns:fsldr="clr-namespace:FormattedSliderDemo"
         mc:Ignorable="d"
-        Title="Speedrun Load Remover 0.2" Height="720" Width="1051.6" MinWidth="1050" MinHeight="720">
+        Title="Speedrun Load Remover 0.3" Height="720" Width="1051.6" MinWidth="1050" MinHeight="720">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="449*"/>
@@ -20,15 +20,15 @@
             <ColumnDefinition Width="33*" MinWidth="290"/>
 
         </Grid.ColumnDefinitions>
-        <MediaElement x:Name="MediaPlayer" LoadedBehavior="Manual" Margin="0,0,0.8,8.8" MediaOpened="MediaPlayer_MediaOpened" ScrubbingEnabled="True" Grid.ColumnSpan="3"/>
+        <MediaElement x:Name="mediaPlayer" LoadedBehavior="Manual" Margin="0,0,0.8,8.8" ScrubbingEnabled="True" Grid.ColumnSpan="3" MediaEnded="mediaPlayer_MediaEnded"/>
         <fsldr:FormattedSlider x:Name="sldrVideoTime" Margin="10,20.2,10,3" Grid.Row="1" VerticalAlignment="Top" PreviewMouseLeftButtonUp="sldrVideoTime_PreviewMouseLeftButtonUp" PreviewMouseLeftButtonDown="sldrVideoTime_PreviewMouseLeftButtonDown" AutoToolTipPlacement="TopLeft" Maximum="1500" TickPlacement="TopLeft" AutoToolTipFormat="{}{0}" IsMoveToPointEnabled="True" ValueChanged="sldrVideoTime_ValueChanged" IsEnabled="False" Grid.ColumnSpan="3" Height="24" IsSelectionRangeEnabled="True" />
 
         <ListBox x:Name="lvList" Margin="10,15,9.6,4.4" Grid.Row="2" MinWidth="290"/>
-        <StackPanel VerticalAlignment="Center" Margin="2.4,10,2.2,10" Grid.Row="2" Grid.Column="1" Height="102" HorizontalAlignment="Center">
+        <StackPanel VerticalAlignment="Center" Margin="2.4,10,2.2,10" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Center">
             <DockPanel Margin="8" HorizontalAlignment="Center">
                 <Button x:Name="btnPlay" Content="Play" Click="btnPlay_Click" Width="50" Height="25" Margin="5" IsEnabled="False"/>
-                <RepeatButton x:Name="btnMoveBack" Content="&lt;" Click="btnMoveBack_Click" Width="50" Height="25" Margin="5" RenderTransformOrigin="0.504,0.5" IsEnabled="False" Delay="200" Interval="50"/>
-                <RepeatButton x:Name="btnMoveForward" Content="&gt;" Click="btnMoveForward_Click" Width="50" Height="25" Margin="5" IsEnabled="False" MouseDown="btnMoveForward_MouseDown" Delay="200" Interval="50"/>
+                <RepeatButton x:Name="btnMoveBack" Content="&lt;" Click="btnMoveBack_Click" Width="50" Height="25" Margin="5" IsEnabled="False" Delay="200" Interval="50"/>
+                <RepeatButton x:Name="btnMoveForward" Content="&gt;" Click="btnMoveForward_Click" Width="50" Height="25" Margin="5" IsEnabled="False" Delay="200" Interval="50"/>
             </DockPanel>
             <DockPanel Margin="8" HorizontalAlignment="Center">
                 <Button x:Name="btnOpen" Content="Open" Click="btnOpen_Click" Width="50" Height="25" Margin="5"/>

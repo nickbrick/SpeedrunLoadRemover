@@ -5,39 +5,44 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfApp1"
         mc:Ignorable="d"
-        Title="About" Height="162.977" Width="263.2" ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
+        Title="About" Height="192.377" Width="244" ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="88*"/>
             <RowDefinition Height="35*"/>
         </Grid.RowDefinitions>
-        <TextBlock Name="TextBlockWithHyperlink" Margin="0,0,-0.2,5">
+        <TextBlock Name="TextBlockWithHyperlink" Margin="0,0,-0.2,5" TextWrapping="Wrap">
             <Hyperlink 
         NavigateUri="http://github.com/nickbrick/SpeedrunLoadRemover"
         RequestNavigate="Hyperlink_RequestNavigate">
             Speedrun Load Remover 
         </Hyperlink>
-            version 0.2.1
+            version 0.3.0
     <LineBreak/>
-            Made by ycarcomed<LineBreak/>
+            Made by ycarcomed.<LineBreak/>
     Testing, support, rubberducking by 
     <Hyperlink 
         NavigateUri="http://www.twitch.tv/7thace"
         RequestNavigate="Hyperlink_RequestNavigate">
         7thAce
-    </Hyperlink>
+    </Hyperlink>.
     <LineBreak/>
     Uses <Hyperlink 
         NavigateUri="http://www.emgu.com"
         RequestNavigate="Hyperlink_RequestNavigate">
         Emgu CV
-    </Hyperlink>.
-    FormattedSlider by 
+    </Hyperlink>,
+    <Hyperlink 
+        NavigateUri="http://github.com/i3arnon/libvideo"
+        RequestNavigate="Hyperlink_RequestNavigate">
+        libvideo
+    </Hyperlink>,
     <Hyperlink 
         NavigateUri="http://joshsmithonwpf.wordpress.com/2007/09/14/modifying-the-auto-tooltip-of-a-slider/"
         RequestNavigate="Hyperlink_RequestNavigate">
-        Josh Smith
-    </Hyperlink>.
+    FormattedSlider
+    </Hyperlink>
+        by Josh Smith.
     <LineBreak/>
     Shoutouts to the JSRF community.
     <LineBreak/>
