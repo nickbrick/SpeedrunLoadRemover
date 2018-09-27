@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfApp1"
         mc:Ignorable="d"
-        Title="About" Height="192.377" Width="244" ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
+        Title="About" Height="221.177" Width="246.4" ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="88*"/>
@@ -42,7 +42,13 @@
         RequestNavigate="Hyperlink_RequestNavigate">
     FormattedSlider
     </Hyperlink>
-        by Josh Smith.
+        by Josh Smith,
+    <Hyperlink 
+        NavigateUri="http://mel-green.com/2010/01/progressstream/"
+        RequestNavigate="Hyperlink_RequestNavigate">
+    ProgressStream
+    </Hyperlink>
+            by Mel Green.
     <LineBreak/>
     Shoutouts to the JSRF community.
     <LineBreak/>
