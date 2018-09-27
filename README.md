@@ -1,6 +1,6 @@
 # Speedrun Load Remover
 C# app to remove loading times from speedrun videos using computer vision.
-Powered by [Emgu CV](http://www.emgu.com).
+Powered by [Emgu CV](http://www.emgu.com), [libvideo](http://github.com/i3arnon/libvideo).
 ## How to use
 1. Open your video file or paste your YouTube video ID (e.g. C_VheAwZBuQ).
 2. Navigate to and mark the time start and time end frames of the speedrun, effectively getting the RTA time.
