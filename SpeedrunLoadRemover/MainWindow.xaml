@@ -6,8 +6,8 @@
         xmlns:local="clr-namespace:WpfApp1"
         xmlns:fsldr="clr-namespace:FormattedSliderDemo"
         mc:Ignorable="d"
-        Title="Speedrun Load Remover 0.3" Height="720" Width="1051.6" MinWidth="1050" MinHeight="720">
-    <Grid>
+        Title="Speedrun Load Remover 0.3" Height="720" Width="1051.6" MinWidth="1050" MinHeight="720" SizeChanged="Window_SizeChanged">
+    <Grid x:Name="grid">
         <Grid.RowDefinitions>
             <RowDefinition Height="449*"/>
             <RowDefinition Height="59.2" />
@@ -20,7 +20,12 @@
             <ColumnDefinition Width="33*" MinWidth="290"/>
 
         </Grid.ColumnDefinitions>
-        <MediaElement x:Name="mediaPlayer" LoadedBehavior="Manual" Margin="0,0,0.8,8.8" ScrubbingEnabled="True" Grid.ColumnSpan="3" MediaEnded="mediaPlayer_MediaEnded"/>
+        <Grid Grid.ColumnSpan="3">
+            <MediaElement x:Name="mediaPlayer" LoadedBehavior="Manual" Margin="0" ScrubbingEnabled="True" Grid.ColumnSpan="3" MediaEnded="mediaPlayer_MediaEnded" PreviewMouseLeftButtonDown="mediaPlayer_PreviewMouseLeftButtonDown"/>
+            <Canvas x:Name="canvas" PreviewMouseLeftButtonDown="canvas_PreviewMouseLeftButtonDown" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Rectangle x:Name="rect_crop" Fill="#00FF0000" HorizontalAlignment="Left" Height="66" Margin="0" Stroke="Red" VerticalAlignment="Top" Width="70" StrokeThickness="2" Grid.ColumnSpan="3" RenderTransformOrigin="0.5,0.5" Canvas.Left="1" Canvas.Top="0"/>
+            </Canvas>
+        </Grid>
         <fsldr:FormattedSlider x:Name="sldrVideoTime" Margin="10,20.2,10,3" Grid.Row="1" VerticalAlignment="Top" PreviewMouseLeftButtonUp="sldrVideoTime_PreviewMouseLeftButtonUp" PreviewMouseLeftButtonDown="sldrVideoTime_PreviewMouseLeftButtonDown" AutoToolTipPlacement="TopLeft" Maximum="1500" TickPlacement="TopLeft" AutoToolTipFormat="{}{0}" IsMoveToPointEnabled="True" ValueChanged="sldrVideoTime_ValueChanged" IsEnabled="False" Grid.ColumnSpan="3" Height="24" IsSelectionRangeEnabled="True" />
 
         <ListBox x:Name="lvList" Margin="10,15,9.6,4.4" Grid.Row="2" MinWidth="290"/>
@@ -37,16 +42,25 @@
                 <Button x:Name="btnSnap" Content="Frame" Click="btnSnap_Click" Width="50" Height="25" Margin="5" RenderTransformOrigin="0.504,0.5" IsEnabled="False"/>
                 <Button x:Name="btnCount" Content="Count" Click="btnCount_Click" Width="50" Height="25" Margin="5" IsEnabled="False"/>
             </DockPanel>
+
         </StackPanel>
         <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="3" HorizontalAlignment="Right">
-            <Label Content="Frame:" VerticalAlignment="Center"/>
+            <StackPanel Orientation="Vertical" HorizontalAlignment="Left" Margin="0,18,0,0">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                    <Label Content="Match:" VerticalAlignment="Center"/>
+                    <Ellipse x:Name="led_matched" Fill="#FFF4F4F5" Stroke="Black" Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </StackPanel>
+                <Button x:Name="btnTest" Content="Test" Click="btnTest_Click" Width="50" Height="25" Margin="5" IsEnabled="False"/>
+
+            </StackPanel>
             <Border BorderBrush="LightGray" BorderThickness="1" Margin="2,15,10,4.4" MinWidth="200" RenderTransformOrigin="0.5,0.5" MinHeight="100" VerticalAlignment="Bottom" Grid.Row="2" Grid.Column="2" Height="100" HorizontalAlignment="Right" Width="201">
-            <Image x:Name="templ_preview" Margin="2"/>
-        </Border>
+                <Image x:Name="templ_preview" Margin="2"/>
+            </Border>
         </StackPanel>
         <ProgressBar x:Name="progress_bar" Grid.ColumnSpan="3" Height="27" Margin="10,10,40,10" Grid.Row="3" VerticalAlignment="Bottom" ValueChanged="progress_bar_ValueChanged"/>
         <Label x:Name="lbl_eta" Grid.Row="3" Grid.Column="1" Content="" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         <Button x:Name="btnAbout" Content="?" Click="btnAbout_Click" HorizontalAlignment="Right" VerticalAlignment="Center" Grid.Row="3" Grid.Column="3" Margin="0,0,10,0" Width="20" Height="20"></Button>
+        <TextBox x:Name="txt_time" HorizontalAlignment="Left" Height="23" Margin="10,423,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="156"/>
 
     </Grid>
 </Window>

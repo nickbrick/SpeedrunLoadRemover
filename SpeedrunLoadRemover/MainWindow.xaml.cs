@@ -23,6 +23,7 @@ namespace WpfApp1 {
         bool resume_on_up = false;
         bool is_working = false;
         ConcurrentQueue<double> loading_ticks_queue = new ConcurrentQueue<double>();
+        ConcurrentQueue<int> loading_frames_queue = new ConcurrentQueue<int>();
         double framerate = 0;
         double video_length_msec = 0;
         int video_frame_count = 0;
@@ -33,8 +34,14 @@ namespace WpfApp1 {
         int run_start_frame = 0;
         int run_end_frame = 0;
         Mat template = new Mat();
-        Stopwatch progress_timer = new Stopwatch();
+        Stopwatch progress_stopwatch = new Stopwatch();
         int old_value = 0;
+        Size real_player_size = new Size();
+        Thickness offset = new Thickness();
+        Point last_mouse = new Point();
+        Size last_size = new Size();
+        Size last_rect = new Size();
+
 
 
         public MainWindow() {
@@ -75,97 +82,39 @@ namespace WpfApp1 {
             */
         }
 
-        private void ScaleInvariantMatchThisFrame() {
+        private void TestCurrentFrame() {
             var time = mediaPlayer.Position.TotalMilliseconds - 1000 / framerate;
-            Mat img = new Mat(); Mat img_ = new Mat();
+            Mat frame = new Mat();
             VideoCapture cap = new VideoCapture(video_path);
             cap.SetCaptureProperty(CapProp.PosMsec, time);
-            img_ = cap.QueryFrame();
-            //templ_preview.Source = 
-            CvInvoke.CvtColor(img_, img_, ColorConversion.Rgb2Gray);
-            CvInvoke.MedianBlur(img_, img_, 3);
-
-            //CvInvoke.AdaptiveThreshold(img_, img, 255,AdaptiveThresholdType.GaussianC, ThresholdType.Binary, 11,2);
-            CvInvoke.MedianBlur(img_, img, 3);
-
-            CvInvoke.NamedWindow("frame", NamedWindowType.AutoSize);
-            CvInvoke.Imshow("frame", img);
-
-            Mat templ = CvInvoke.Imread(@"C:\Users\Nick\Documents\sources\WpfApp1\videos\cleanload.png");
-            List<System.Drawing.Size> sizes = new List<System.Drawing.Size>();
-            var initial_size = new System.Drawing.Size(templ.Cols, templ.Rows);
-            var final_size = new System.Drawing.Size(img.Cols, img.Rows);
-            int num_steps = 10;
-            int step = (img.Rows - templ.Rows) / num_steps;
-            List<Mat> templs = new List<Mat>();
-            for (int i = 0; i < num_steps; i++) {
-                //templs.Add(new Mat());
-            }
-            templs.Add(templ);
-            for (int i = 0; i < num_steps; i++) {
-                templs.Add(new Mat());
-
-                int rows = templ.Rows + step * (i + 1);
-                int cols = rows * templ.Cols / templ.Rows;
-
-                if (cols > img.Cols) {
-                    cols = img.Cols;
-                    rows = cols * templ.Rows / templ.Cols;
-                    CvInvoke.Resize(templ, templs.ElementAt(i + 1), new System.Drawing.Size(cols, rows));
-                    //templs.Remove(templs.Last());
-                    break;
-                }
-                //Mat retempl = (Mat)templ.Clone();
-                //templs.Add(retempl);
-                CvInvoke.Resize(templ, templs.ElementAt(i + 1), new System.Drawing.Size(cols, rows));
-
-
-            }
-            List<Mat> edgeses = new List<Mat>();
-            foreach (Mat t in templs) {
-                Mat edges = new Mat(t.Rows, t.Cols, DepthType.Default, 1);
-                //CvInvoke.Threshold(t, edges, 0.8, 1, ThresholdType.Binary);
-                CvInvoke.CvtColor(t, t, ColorConversion.Rgb2Gray);
-                //CvInvoke.MedianBlur(t, t, 3);
-
-                //CvInvoke.AdaptiveThreshold(t, t, 255, AdaptiveThresholdType.GaussianC, ThresholdType.Binary, 11, 2);
-                CvInvoke.MedianBlur(t, edges, 3);
-
-                //CvInvoke.Canny(t, edges, 100, 200);
-                edgeses.Add(edges);
-            }
-
-            foreach (Mat t in edgeses) {
-                int i = edgeses.IndexOf(t);
-
-
-                CvInvoke.NamedWindow("templ" + i.ToString(), NamedWindowType.AutoSize);
-                CvInvoke.Imshow("templ" + i.ToString(), t);
-
-                Mat frame = new Mat();
+            frame = cap.QueryFrame();
+            Mat templ = template;
+            
                 Mat mask = new Mat();
                 double minVal = 0; double maxVal = 0;
                 System.Drawing.Point minLoc = new System.Drawing.Point(); System.Drawing.Point maxLoc = new System.Drawing.Point();
                 Mat asd = new Mat();
 
 
-                int result_cols = img.Cols - t.Cols + 1;
-                int result_rows = img.Rows - t.Rows + 1;
+                int result_cols = frame.Cols - template.Cols + 1;
+                int result_rows = frame.Rows - template.Rows + 1;
                 Mat result = new Mat();
                 result.Create(result_cols, result_rows, DepthType.Cv32F, 3);
-                CvInvoke.MatchTemplate(img, t, result, TemplateMatchingType.Sqdiff);
+                CvInvoke.MatchTemplate(frame, template, result, TemplateMatchingType.Sqdiff);
                 System.Drawing.Point matchLoc;
                 CvInvoke.MinMaxLoc(result, ref minVal, ref maxVal, ref minLoc, ref maxLoc, asd);
                 CvInvoke.Normalize(result, result, 0, 1, NormType.MinMax, DepthType.Cv32F, mask);
                 matchLoc = minLoc;
-                Debug.WriteLine(string.Format("size {0}:{2}x{3}, error {1}", i, minVal / 10000000, t.Cols, t.Rows));
-            }
+                Debug.WriteLine(string.Format("Testing: error {0}", minVal / 10000000));
         }
 
         private void PreviewTemplate() {
-            var time = mediaPlayer.Position.TotalMilliseconds - 1000 / framerate;
+            //var time = mediaPlayer.Position.TotalMilliseconds - 1000 / framerate;
+            int frame = (int)(Math.Round(mediaPlayer.Position.TotalMilliseconds * framerate / 1000));
             VideoCapture cap = new VideoCapture(video_path);
-            cap.SetCaptureProperty(CapProp.PosMsec, (int)time);
+            //cap.SetCaptureProperty(CapProp.PosMsec, time);
+            cap.SetCaptureProperty(CapProp.PosFrames, frame-1);
+
             template = cap.QueryFrame();
             cap.Dispose();
             System.Drawing.Bitmap bm = template.Bitmap;
@@ -207,11 +156,14 @@ namespace WpfApp1 {
             if (width + height + framerate != 0) {
                 lvList.Items.Insert(0, string.Format("Video loaded: Total runtime {0}, {1}x{2}@{3}", duration, width, height, (int)Math.Round(framerate)));
                 progress_bar.Maximum = video_frame_count;
+                sldrVideoTime.Minimum = 1;
                 sldrVideoTime.Maximum = video_length_msec;
-                sldrVideoTime.Value = 0;
+                sldrVideoTime.Value = sldrVideoTime.Minimum;
                 sldrVideoTime.Ticks = new DoubleCollection();
                 sldrVideoTime.SelectionStart = run_start_msec;
                 sldrVideoTime.SelectionEnd = run_end_msec;
+                sldrVideoTime.LargeChange = 10000;
+                sldrVideoTime.SmallChange = 100;
             }
         }
 
@@ -272,9 +224,12 @@ namespace WpfApp1 {
 
                 if (minVal < Math.Pow(10, 7) * 5) { // is a match
                     loading_frames++;
+                    
+                    loading_frames_queue.Enqueue(i+1);
                     if (!is_last_frame_loading) {
                         var tick = Math.Floor(cap.GetCaptureProperty((int)CapProp.PosMsec) / 1000);
                         loading_ticks_queue.Enqueue(tick);
+
                         is_last_frame_loading = true;
                         last_load_start = (int)tick;
                     }
@@ -294,8 +249,25 @@ namespace WpfApp1 {
 
         private void IsPlaying(bool flag) {
             is_playing = flag;
+
         }
 
+        private static string MakeValidFileName(string name) {
+            string invalidChars = System.Text.RegularExpressions.Regex.Escape(new string(System.IO.Path.GetInvalidFileNameChars()));
+            string invalidRegStr = string.Format(@"([{0}]*\.+$)|([{0}]+)", invalidChars);
+            return System.Text.RegularExpressions.Regex.Replace(name, invalidRegStr, "_");
+        }
+
+        public double QuantizeTime(double ms) {
+            return Math.Round((ms / (double)(1000 / framerate)),
+             MidpointRounding.AwayFromZero) * (1000 / framerate) + 1;
+        }
+
+        private Size FitToRect(double w, double h, double W, double H) {
+            double r = w / h;
+            double R = W / H;
+            if (R > r) return new Size(w * H / h, H); else return new Size(W, h * W / w);
+        }
         private void btnPlay_Click(object sender, RoutedEventArgs e) {
             if (is_playing) {
                 btnPlay.Content = "Play";
@@ -314,28 +286,31 @@ namespace WpfApp1 {
             IsPlaying(false);
             btnPlay.Content = "Play";
             mediaPlayer.Position -= TimeSpan.FromMilliseconds(1000 / framerate);
-            sldrVideoTime.Value = mediaPlayer.Position.TotalMilliseconds;
+            mediaPlayer.Play();
+            mediaPlayer.Pause();
+
+            sldrVideoTime.Value -= 1000 / framerate;
         }
 
         private void btnMoveForward_Click(object sender, RoutedEventArgs e) {
             mediaPlayer.Pause();
             IsPlaying(false);
             btnPlay.Content = "Play";
-            mediaPlayer.Position += TimeSpan.FromMilliseconds(1000 / framerate);
-            sldrVideoTime.Value = mediaPlayer.Position.TotalMilliseconds;
+            mediaPlayer.Position += TimeSpan.FromMilliseconds(1000/framerate);
+            mediaPlayer.Play();
+            mediaPlayer.Pause();
+            sldrVideoTime.Value += 1000 / framerate;
         }
 
-        private static string MakeValidFileName(string name) {
-            string invalidChars = System.Text.RegularExpressions.Regex.Escape(new string(System.IO.Path.GetInvalidFileNameChars()));
-            string invalidRegStr = string.Format(@"([{0}]*\.+$)|([{0}]+)", invalidChars);
-            return System.Text.RegularExpressions.Regex.Replace(name, invalidRegStr, "_");
-        }
+
+
         private async void btnOpen_Click(object sender, RoutedEventArgs e) {
             // Configure open file dialog box 
             IsPlaying(false);
             btnPlay.Content = "Play";
             mediaPlayer.Stop();
-            dialog.Filter = "Movie Files|*.mp4;*.mpg;*.avi;*.movl*.wmv";
+            loading_frames_queue = new ConcurrentQueue<int>();
+            dialog.Filter = "Movie Files|*.mp4;*.mpg;*.avi;*.mov;*.wmv;*.mkv";
             dialog.FilterIndex = 1;
             dialog.Title = "Select video file or paste YouTube video ID";
             dialog.FileName = "File or YT ID"; // Default file name 
@@ -349,6 +324,7 @@ namespace WpfApp1 {
             if (result == true) {
                 Debug.WriteLine(dialog.FileName);
                 video_path = dialog.FileName;
+
                 if (!System.IO.File.Exists(dialog.FileName)) { //no file exists, try youtube
                     var video_id = System.IO.Path.GetFileNameWithoutExtension(dialog.FileName);
                     var url = "https://youtu.be/" + video_id;
@@ -392,6 +368,10 @@ namespace WpfApp1 {
                     await Task.WhenAll(t);
                 }
                 if (System.IO.File.Exists(video_path)) { //file supposedly exists
+                    if (System.IO.Path.GetExtension(video_path) == ".webm") {
+                        lvList.Dispatcher.Invoke((Action)(() => lvList.Items.Insert(0, "Sorry, .webm file not supported by player.")));
+                        return;
+                    }
                     //video_path = dialog.FileName;
                     if (new System.IO.FileInfo(video_path).Length > 0)  { //file or youtube really exists
                         btnOpen.IsEnabled = true;
@@ -407,14 +387,25 @@ namespace WpfApp1 {
 
         private void sliderSyncTimer_Tick(object sender, EventArgs e) {
             if (is_playing) sldrVideoTime.Value = mediaPlayer.Position.TotalMilliseconds;
+            int frame = (int)(Math.Round(mediaPlayer.Position.TotalMilliseconds * framerate / 1000));
+            if (loading_frames_queue.Contains(frame)) {
+                led_matched.Fill = Brushes.Green;
+            }
+            else {
+                led_matched.Fill = Brushes.Transparent;
+
+            }
+            txt_time.Text = mediaPlayer.Position + " " + frame;
         }
 
         private void btnSnap_Click(object sender, RoutedEventArgs e) {
             PreviewTemplate();
             btnCount.IsEnabled = true;
+            btnTest.IsEnabled = true;
         }
 
         private void sldrVideoTime_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e) {
+            sldrVideoTime.Value = QuantizeTime(sldrVideoTime.Value);
             if (resume_on_up) {
                 IsPlaying(true);
                 mediaPlayer.Play();
@@ -452,6 +443,7 @@ namespace WpfApp1 {
             is_working = true;
             List<Task> task_list = new List<Task>();
             ConcurrentBag<int> frame_count_bag = new ConcurrentBag<int>();
+            loading_frames_queue = new ConcurrentQueue<int>();
 
             sldrVideoTime.Ticks = new DoubleCollection(new double[] { 10 });
             DoubleCollection times = new DoubleCollection();
@@ -460,7 +452,7 @@ namespace WpfApp1 {
             btnOpen.IsEnabled = false;
             btnSnap.IsEnabled = false;
             btnCount.IsEnabled = false;
-            progress_timer.Restart();
+            progress_stopwatch.Restart();
 
             for (int core = 0; core < log_proc_count; core++) {
                 object core_ = core;
@@ -493,6 +485,7 @@ namespace WpfApp1 {
             btnOpen.IsEnabled = true;
             btnSnap.IsEnabled = true;
             btnCount.IsEnabled = true;
+            btnTest.IsEnabled = false;
             lvList.Items.Insert(0, string.Format("Work over. Elapsed time: {0}", string.Format("{0:m\\:ss}", new TimeSpan(0, 0, 0, 0, (int)master_stopwatch.ElapsedMilliseconds))));
             lvList.Items.Insert(0, "Video processed (frames): " + run_frame_count);
             lvList.Items.Insert(0, "Processing ratio: " + (int)(run_length_msec / master_stopwatch.ElapsedMilliseconds));
@@ -503,7 +496,7 @@ namespace WpfApp1 {
         }
 
         private void btnMarkStart_Click(object sender, RoutedEventArgs e) {
-            run_start_msec = (int)mediaPlayer.Position.TotalMilliseconds;
+            run_start_msec = mediaPlayer.Position.TotalMilliseconds;
             run_start_frame = (int)(run_start_msec * framerate / 1000);
             var time_start_span = new TimeSpan(0, 0, 0, 0, (int)run_start_msec);
             sldrVideoTime.SelectionStart = run_start_msec;
@@ -513,7 +506,7 @@ namespace WpfApp1 {
         }
 
         private void btnMarkEnd_Click(object sender, RoutedEventArgs e) {
-            run_end_msec = (int)mediaPlayer.Position.TotalMilliseconds;
+            run_end_msec = mediaPlayer.Position.TotalMilliseconds;
             run_end_frame = (int)(run_end_msec * framerate / 1000);
             var time_end_span = new TimeSpan(0, 0, 0, 0, (int)run_end_msec);
             sldrVideoTime.SelectionEnd = run_end_msec;
@@ -524,7 +517,7 @@ namespace WpfApp1 {
 
         private void sldrVideoTime_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
             if (!is_playing)
-                mediaPlayer.Position = new System.TimeSpan(0, 0, 0, 0, (int)sldrVideoTime.Value);
+                mediaPlayer.Position = new System.TimeSpan(0, 0, 0, 0, (int)(QuantizeTime(sldrVideoTime.Value)));
             if (!is_working) {
                 if (mediaPlayer.Position.TotalMilliseconds >= run_end_msec) btnMarkStart.IsEnabled = false; else btnMarkStart.IsEnabled = true;
                 if (mediaPlayer.Position.TotalMilliseconds <= run_start_msec) btnMarkEnd.IsEnabled = false; else btnMarkEnd.IsEnabled = true;
@@ -541,12 +534,12 @@ namespace WpfApp1 {
             //var value = (int)(progress_bar.Value / 1000);
             int percent = (int)(progress_bar.Value * 100 / progress_bar.Maximum);
             if (percent > old_value) {
-                var time_msec = progress_timer.ElapsedMilliseconds;
+                var time_msec = progress_stopwatch.ElapsedMilliseconds;
                 //double rate = 1 / (double)time_msec;
                 double eta_msec = (1 - (progress_bar.Value / progress_bar.Maximum)) *100 * time_msec;
                 string eta = "Time left: " + string.Format("{0:h\\:mm\\:ss}", new TimeSpan(0, 0, 0, 0, (int)eta_msec));
                 lbl_eta.Content = eta;
-                progress_timer.Restart();
+                progress_stopwatch.Restart();
                 old_value = percent;
             }
             if (progress_bar.Value >= progress_bar.Maximum) {
@@ -557,10 +550,85 @@ namespace WpfApp1 {
         }
 
         private void mediaPlayer_MediaEnded(object sender, RoutedEventArgs e) {
-            sldrVideoTime.Value = 0;
-            mediaPlayer.Stop();
-            IsPlaying(false);
-            btnPlay.Content = "Play";
+            if (is_playing) {
+                sldrVideoTime.Value = sldrVideoTime.Minimum;
+                mediaPlayer.Stop();
+                IsPlaying(false);
+                btnPlay.Content = "Play";
+            }
+        }
+
+        private void btnTest_Click(object sender, RoutedEventArgs e) {
+            TestCurrentFrame();
+        }
+
+        private void mediaPlayer_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
+            /* //Thickness rect_margin = rect_crop.Margin;
+             last_mouse = Mouse.GetPosition(mediaPlayer);
+             last_size = new Size(mediaPlayer.ActualWidth, mediaPlayer.ActualHeight);
+             //real_player_origin = grid.PointFromScreen(mediaPlayer.PointToScreen(last_mouse));
+             //rect_margin.Left = real_player_origin.X;
+             //rect_margin.Top = real_player_origin.Y;
+             //rect_crop.Margin = rect_margin;
+             System.Windows.Controls.Canvas.SetLeft(rect_crop, canvas.PointFromScreen(last_mouse).X);
+             */
+            last_mouse = Mouse.GetPosition(canvas);
+            last_size = new Size(mediaPlayer.ActualWidth, mediaPlayer.ActualHeight);
+            last_rect = rect_crop.RenderSize;
+            System.Windows.Controls.Canvas.SetLeft(rect_crop, last_mouse.X);
+            lvList.Items.Insert(0, "mouse : " + last_mouse);
+            last_mouse = new Point(last_mouse.X / canvas.Width, last_mouse.Y/ canvas.Height);
+        }
+
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e) {
+            double ww = grid.ColumnDefinitions[0].ActualWidth + grid.ColumnDefinitions[1].ActualWidth + grid.ColumnDefinitions[2].ActualWidth;
+            lvList.Items.Insert(0, "window: " + ww + "x" + (int)grid.RowDefinitions[0].ActualHeight);
+            lvList.Items.Insert(0, "player: " + (int)mediaPlayer.ActualWidth + "x" + (int)mediaPlayer.ActualHeight);
+            real_player_size = FitToRect(mediaPlayer.ActualWidth, mediaPlayer.ActualHeight, ww, grid.RowDefinitions[0].ActualHeight);
+            canvas.Width = real_player_size.Width;
+            canvas.Height= real_player_size.Height;
+
+            double left_margin = (ww - real_player_size.Width) / 2;
+            double top_margin = (grid.RowDefinitions[0].ActualHeight - real_player_size.Height) / 2;
+            lvList.Items.Insert(0, "player margin: " + left_margin + " " + top_margin);
+            
+            offset.Left = left_margin;
+            offset.Top = top_margin;
+            /*
+            if (mediaPlayer.ActualWidth * last_size.Width > 0){
+                Thickness margin = rect_crop.Margin;
+                //margin.Left = last_mouse.X * (mediaPlayer.ActualWidth/last_size.Width)+ offset.Left;
+                margin.Left = real_player_origin.X * (mediaPlayer.ActualWidth / last_size.Width);
+                margin.Top = last_mouse.Y * (mediaPlayer.ActualHeight / last_size.Height) + offset.Top;
+                rect_crop.Margin = margin;
+            }
+            */
+            var scale = (mediaPlayer.ActualWidth / last_size.Width);
+            rect_crop.RenderTransformOrigin = new Point(0.5 , 0.5);// grid.PointToScreen(new Point(ww / 2, grid.RowDefinitions[0].ActualHeight / 2));
+            Point scale_origin = new Point();
+            if (left_margin == 0) scale_origin = grid.PointToScreen(new Point(0, grid.RowDefinitions[0].ActualHeight/2)); else scale_origin = grid.PointToScreen(new Point(ww/2, 0));
+            var x = rect_crop.PointFromScreen(scale_origin).X;
+            var y = rect_crop.PointFromScreen(scale_origin).Y;
+            Point other = new Point(x, y);
+            //rect_crop.RenderTransform = new ScaleTransform(scale, scale, x, y);
+            if (!Double.IsNaN(scale)) {
+                rect_crop.Width = last_rect.Width * scale;
+                rect_crop.Height = last_rect.Height * scale;
+                System.Windows.Controls.Canvas.SetLeft(rect_crop, last_mouse.X*canvas.Width);
+
+            }
+            lvList.Items.Insert(0, "scale originn: " + grid.PointFromScreen(scale_origin));
+            lvList.Items.Insert(0, "other: " + other);
+
+            lvList.Items.Insert(0, "scale : " + scale);
+
+
+        }
+
+        private void canvas_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
+
+
+
         }
     }
 }

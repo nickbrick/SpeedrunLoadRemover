@@ -42,10 +42,6 @@ namespace FormattedSliderDemo
 		{
 			if (!string.IsNullOrEmpty(this.AutoToolTipFormat))
 			{
-                //this.AutoToolTip.Content = string.Format(
-                //	this.AutoToolTipFormat, 
-                //	this.AutoToolTip.Content);
-
                 var timespan = new System.TimeSpan(0, 0, 0, 0, System.Int32.Parse((string)this.AutoToolTip.Content, System.Globalization.NumberStyles.AllowThousands));
                 var timestring = string.Format("{0:h\\:mm\\:ss\\.fff}", timespan);
                 this.AutoToolTip.Content = timestring;
