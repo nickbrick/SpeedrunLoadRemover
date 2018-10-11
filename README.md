@@ -11,4 +11,5 @@ Powered by [Emgu CV](http://www.emgu.com), [libvideo](http://github.com/i3arnon/
 Windows 32 and 64 bit.
 ## Upcoming features
 Finer matching algorithm control
+
 More robust youtube support
