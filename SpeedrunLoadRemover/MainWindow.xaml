@@ -21,10 +21,8 @@
 
         </Grid.ColumnDefinitions>
         <Grid Grid.ColumnSpan="3">
-            <MediaElement x:Name="mediaPlayer" LoadedBehavior="Manual" Margin="0" ScrubbingEnabled="True" Grid.ColumnSpan="3" MediaEnded="mediaPlayer_MediaEnded" PreviewMouseLeftButtonDown="mediaPlayer_PreviewMouseLeftButtonDown"/>
-            <Canvas x:Name="canvas" PreviewMouseLeftButtonDown="canvas_PreviewMouseLeftButtonDown" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Rectangle x:Name="rect_crop" Fill="#00FF0000" HorizontalAlignment="Left" Height="66" Margin="0" Stroke="Red" VerticalAlignment="Top" Width="70" StrokeThickness="2" Grid.ColumnSpan="3" RenderTransformOrigin="0.5,0.5" Canvas.Left="1" Canvas.Top="0"/>
-            </Canvas>
+            <MediaElement x:Name="mediaPlayer" LoadedBehavior="Manual" Margin="0" ScrubbingEnabled="True" Grid.ColumnSpan="3" MediaEnded="mediaPlayer_MediaEnded" PreviewMouseLeftButtonDown="mediaPlayer_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="mediaPlayer_PreviewMouseLeftButtonUp" PreviewMouseMove="mediaPlayer_PreviewMouseMove"/>
+            <Canvas x:Name="canvas" PreviewMouseLeftButtonDown="canvas_PreviewMouseLeftButtonDown"/>
         </Grid>
         <fsldr:FormattedSlider x:Name="sldrVideoTime" Margin="10,20.2,10,3" Grid.Row="1" VerticalAlignment="Top" PreviewMouseLeftButtonUp="sldrVideoTime_PreviewMouseLeftButtonUp" PreviewMouseLeftButtonDown="sldrVideoTime_PreviewMouseLeftButtonDown" AutoToolTipPlacement="TopLeft" Maximum="1500" TickPlacement="TopLeft" AutoToolTipFormat="{}{0}" IsMoveToPointEnabled="True" ValueChanged="sldrVideoTime_ValueChanged" IsEnabled="False" Grid.ColumnSpan="3" Height="24" IsSelectionRangeEnabled="True" />
 

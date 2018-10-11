@@ -10,6 +10,7 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using System.Collections.Concurrent;
 
+
 namespace WpfApp1 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -41,7 +42,7 @@ namespace WpfApp1 {
         Point last_mouse = new Point();
         Size last_size = new Size();
         Size last_rect = new Size();
-
+        SelectionRect rect;
 
 
         public MainWindow() {
@@ -55,6 +56,7 @@ namespace WpfApp1 {
             sldrVideoTime.ApplyTemplate();
             System.Windows.Controls.Primitives.Thumb thumb = (sldrVideoTime.Template.FindName("PART_Track", sldrVideoTime) as System.Windows.Controls.Primitives.Track).Thumb;
             thumb.MouseEnter += new MouseEventHandler(thumb_MouseEnter);
+            
         }
 
 
@@ -164,6 +166,8 @@ namespace WpfApp1 {
                 sldrVideoTime.SelectionEnd = run_end_msec;
                 sldrVideoTime.LargeChange = 10000;
                 sldrVideoTime.SmallChange = 100;
+                rect = new SelectionRect(canvas);
+               //UpdateVideoBounds();
             }
         }
 
@@ -563,72 +567,38 @@ namespace WpfApp1 {
         }
 
         private void mediaPlayer_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
-            /* //Thickness rect_margin = rect_crop.Margin;
-             last_mouse = Mouse.GetPosition(mediaPlayer);
-             last_size = new Size(mediaPlayer.ActualWidth, mediaPlayer.ActualHeight);
-             //real_player_origin = grid.PointFromScreen(mediaPlayer.PointToScreen(last_mouse));
-             //rect_margin.Left = real_player_origin.X;
-             //rect_margin.Top = real_player_origin.Y;
-             //rect_crop.Margin = rect_margin;
-             System.Windows.Controls.Canvas.SetLeft(rect_crop, canvas.PointFromScreen(last_mouse).X);
-             */
-            last_mouse = Mouse.GetPosition(canvas);
-            last_size = new Size(mediaPlayer.ActualWidth, mediaPlayer.ActualHeight);
-            last_rect = rect_crop.RenderSize;
-            System.Windows.Controls.Canvas.SetLeft(rect_crop, last_mouse.X);
-            lvList.Items.Insert(0, "mouse : " + last_mouse);
-            last_mouse = new Point(last_mouse.X / canvas.Width, last_mouse.Y/ canvas.Height);
+            UpdateVideoBounds();
         }
 
-        private void Window_SizeChanged(object sender, SizeChangedEventArgs e) {
+        private void UpdateVideoBounds() {
             double ww = grid.ColumnDefinitions[0].ActualWidth + grid.ColumnDefinitions[1].ActualWidth + grid.ColumnDefinitions[2].ActualWidth;
             lvList.Items.Insert(0, "window: " + ww + "x" + (int)grid.RowDefinitions[0].ActualHeight);
             lvList.Items.Insert(0, "player: " + (int)mediaPlayer.ActualWidth + "x" + (int)mediaPlayer.ActualHeight);
             real_player_size = FitToRect(mediaPlayer.ActualWidth, mediaPlayer.ActualHeight, ww, grid.RowDefinitions[0].ActualHeight);
-            canvas.Width = real_player_size.Width;
-            canvas.Height= real_player_size.Height;
+            var left = (canvas.ActualWidth - real_player_size.Width) / 2;
+            var prop_left = left / canvas.ActualWidth;
+            var prop_right = 1 - prop_left;
+            var top = (canvas.ActualHeight - real_player_size.Height) / 2;
+            var prop_top = top / canvas.ActualHeight;
+            var prop_bot = 1 - prop_top;
+            rect.video_bounds = new ProportionalRect(prop_left, prop_top, prop_right, prop_bot);
 
-            double left_margin = (ww - real_player_size.Width) / 2;
-            double top_margin = (grid.RowDefinitions[0].ActualHeight - real_player_size.Height) / 2;
-            lvList.Items.Insert(0, "player margin: " + left_margin + " " + top_margin);
-            
-            offset.Left = left_margin;
-            offset.Top = top_margin;
-            /*
-            if (mediaPlayer.ActualWidth * last_size.Width > 0){
-                Thickness margin = rect_crop.Margin;
-                //margin.Left = last_mouse.X * (mediaPlayer.ActualWidth/last_size.Width)+ offset.Left;
-                margin.Left = real_player_origin.X * (mediaPlayer.ActualWidth / last_size.Width);
-                margin.Top = last_mouse.Y * (mediaPlayer.ActualHeight / last_size.Height) + offset.Top;
-                rect_crop.Margin = margin;
-            }
-            */
-            var scale = (mediaPlayer.ActualWidth / last_size.Width);
-            rect_crop.RenderTransformOrigin = new Point(0.5 , 0.5);// grid.PointToScreen(new Point(ww / 2, grid.RowDefinitions[0].ActualHeight / 2));
-            Point scale_origin = new Point();
-            if (left_margin == 0) scale_origin = grid.PointToScreen(new Point(0, grid.RowDefinitions[0].ActualHeight/2)); else scale_origin = grid.PointToScreen(new Point(ww/2, 0));
-            var x = rect_crop.PointFromScreen(scale_origin).X;
-            var y = rect_crop.PointFromScreen(scale_origin).Y;
-            Point other = new Point(x, y);
-            //rect_crop.RenderTransform = new ScaleTransform(scale, scale, x, y);
-            if (!Double.IsNaN(scale)) {
-                rect_crop.Width = last_rect.Width * scale;
-                rect_crop.Height = last_rect.Height * scale;
-                System.Windows.Controls.Canvas.SetLeft(rect_crop, last_mouse.X*canvas.Width);
+        }
 
-            }
-            lvList.Items.Insert(0, "scale originn: " + grid.PointFromScreen(scale_origin));
-            lvList.Items.Insert(0, "other: " + other);
-
-            lvList.Items.Insert(0, "scale : " + scale);
-
-
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e) {
         }
 
         private void canvas_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
-
-
-
         }
+
+        private void mediaPlayer_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e) {
+        }
+
+
+        private void mediaPlayer_PreviewMouseMove(object sender, MouseEventArgs e) {
+            if (Mouse.LeftButton == MouseButtonState.Pressed) {
+            }
+        }
+
     }
 }
