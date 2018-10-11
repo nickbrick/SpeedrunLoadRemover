@@ -38,10 +38,6 @@ namespace WpfApp1 {
         Stopwatch progress_stopwatch = new Stopwatch();
         int old_value = 0;
         Size real_player_size = new Size();
-        Thickness offset = new Thickness();
-        Point last_mouse = new Point();
-        Size last_size = new Size();
-        Size last_rect = new Size();
         SelectionRect rect;
 
 
