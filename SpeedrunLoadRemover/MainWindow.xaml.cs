@@ -38,7 +38,8 @@ namespace WpfApp1 {
         Stopwatch progress_stopwatch = new Stopwatch();
         int old_value = 0;
         Size real_player_size = new Size();
-        SelectionRect rect;
+        Size video_natural_dimensions = new Size();
+        SelectionRect selection;
 
 
         public MainWindow() {
@@ -113,7 +114,10 @@ namespace WpfApp1 {
             //cap.SetCaptureProperty(CapProp.PosMsec, time);
             cap.SetCaptureProperty(CapProp.PosFrames, frame-1);
 
+
             template = cap.QueryFrame();
+            template = new Mat(template, (selection.prop_rect*video_natural_dimensions).ToRectangle());
+
             cap.Dispose();
             System.Drawing.Bitmap bm = template.Bitmap;
             System.Windows.Media.Imaging.BitmapSource bs = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
@@ -150,6 +154,7 @@ namespace WpfApp1 {
             run_frame_count = run_end_frame;
             var width = cap.GetCaptureProperty(CapProp.FrameWidth);
             var height = cap.GetCaptureProperty(CapProp.FrameHeight);
+            video_natural_dimensions = new Size(width, height);
             var duration = string.Format("{0:h\\:mm\\:ss\\.fff}", new TimeSpan(0, 0, 0, 0, (int)(video_frame_count * 1000 / framerate)));
             if (width + height + framerate != 0) {
                 lvList.Items.Insert(0, string.Format("Video loaded: Total runtime {0}, {1}x{2}@{3}", duration, width, height, (int)Math.Round(framerate)));
@@ -584,7 +589,7 @@ namespace WpfApp1 {
         private void mediaPlayer_MediaOpened(object sender, RoutedEventArgs e) {
             mediaPlayer.UpdateLayout();
             UpdateVideoBounds();
-            rect = new SelectionRect(canvas);
+            if (selection == null) selection = new SelectionRect(canvas);
 
             //rect.Reset();
 
@@ -593,10 +598,10 @@ namespace WpfApp1 {
 
         private void mediaPlayer_SizeChanged(object sender, SizeChangedEventArgs e) {
             UpdateVideoBounds();
-            if (rect != null) {
-                rect.AbsFromProp();
-                rect.HandlesFromAbs();
-                rect.ShapeFromHandles();
+            if (selection != null) {
+                selection.AbsFromProp();
+                selection.HandlesFromAbs();
+                selection.ShapeFromHandles();
             }
         }
     }

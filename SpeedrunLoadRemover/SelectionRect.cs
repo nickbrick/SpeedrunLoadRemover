@@ -45,11 +45,19 @@ namespace WpfApp1 {
                                     rect.X / s.Width,
                                     rect.Y / s.Height);
         }
+        public System.Drawing.Rectangle ToRectangle() {
+            var rectangle = new System.Drawing.Rectangle();
+            rectangle.X = (int)Math.Round(x);
+            rectangle.Y = (int)Math.Round(y);
+            rectangle.Width = (int)Math.Round(X-x);
+            rectangle.Height = (int)Math.Round(Y-y);
+            return rectangle;
+        }
     }
     class SelectionRect {
         Rectangle shape = new Rectangle();
-        LogicalRect prop_rect = new LogicalRect();
-        LogicalRect abs_rect = new LogicalRect();
+        public LogicalRect prop_rect = new LogicalRect();
+        public LogicalRect abs_rect = new LogicalRect();
         Canvas canvas = new Canvas();
         List<Rectangle> handles = new List<Rectangle>();
         double handle_size = 7;
@@ -349,8 +357,8 @@ namespace WpfApp1 {
         private void AbsFromHandles() {
             abs_rect.x = Canvas.GetLeft(top_left);
             abs_rect.y = Canvas.GetTop(top_left);
-            abs_rect.X = Canvas.GetLeft(bottom_right);
-            abs_rect.Y = Canvas.GetTop(bottom_right);
+            abs_rect.X = Canvas.GetLeft(bottom_right) + handle_size;
+            abs_rect.Y = Canvas.GetTop(bottom_right) + handle_size;
         }
 
         public void HandlesFromAbs() {
