@@ -162,8 +162,6 @@ namespace WpfApp1 {
                 sldrVideoTime.SelectionEnd = run_end_msec;
                 sldrVideoTime.LargeChange = 10000;
                 sldrVideoTime.SmallChange = 100;
-                rect = new SelectionRect(canvas);
-               //UpdateVideoBounds();
             }
         }
 
@@ -568,33 +566,38 @@ namespace WpfApp1 {
 
         private void UpdateVideoBounds() {
             double ww = grid.ColumnDefinitions[0].ActualWidth + grid.ColumnDefinitions[1].ActualWidth + grid.ColumnDefinitions[2].ActualWidth;
-            lvList.Items.Insert(0, "window: " + ww + "x" + (int)grid.RowDefinitions[0].ActualHeight);
-            lvList.Items.Insert(0, "player: " + (int)mediaPlayer.ActualWidth + "x" + (int)mediaPlayer.ActualHeight);
             real_player_size = FitToRect(mediaPlayer.ActualWidth, mediaPlayer.ActualHeight, ww, grid.RowDefinitions[0].ActualHeight);
-            var left = (canvas.ActualWidth - real_player_size.Width) / 2;
-            var prop_left = left / canvas.ActualWidth;
-            var prop_right = 1 - prop_left;
-            var top = (canvas.ActualHeight - real_player_size.Height) / 2;
-            var prop_top = top / canvas.ActualHeight;
-            var prop_bot = 1 - prop_top;
-            rect.video_bounds = new ProportionalRect(prop_left, prop_top, prop_right, prop_bot);
-
+            canvas.Width = real_player_size.Width;
+            canvas.Height = real_player_size.Height;
+            canvas.UpdateLayout();
         }
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e) {
         }
-
         private void canvas_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
         }
-
         private void mediaPlayer_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e) {
         }
-
-
         private void mediaPlayer_PreviewMouseMove(object sender, MouseEventArgs e) {
-            if (Mouse.LeftButton == MouseButtonState.Pressed) {
-            }
         }
 
+        private void mediaPlayer_MediaOpened(object sender, RoutedEventArgs e) {
+            mediaPlayer.UpdateLayout();
+            UpdateVideoBounds();
+            rect = new SelectionRect(canvas);
+
+            //rect.Reset();
+
+
+        }
+
+        private void mediaPlayer_SizeChanged(object sender, SizeChangedEventArgs e) {
+            UpdateVideoBounds();
+            if (rect != null) {
+                rect.AbsFromProp();
+                rect.HandlesFromAbs();
+                rect.ShapeFromHandles();
+            }
+        }
     }
 }
