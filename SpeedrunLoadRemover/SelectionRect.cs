@@ -55,7 +55,8 @@ namespace WpfApp1 {
         }
     }
     class SelectionRect {
-        Rectangle shape = new Rectangle();
+        Border shape = new Border();
+        Rectangle dash = new Rectangle();
         public LogicalRect prop_rect = new LogicalRect();
         public LogicalRect abs_rect = new LogicalRect();
         Canvas canvas = new Canvas();
@@ -63,6 +64,8 @@ namespace WpfApp1 {
         double handle_size = 7;
         Rectangle top_left;
         Rectangle bottom_right;
+        System.Windows.Media.SolidColorBrush stroke_enabled = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.OrangeRed);
+        System.Windows.Media.SolidColorBrush fill_enabled = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.White);
 
         public SelectionRect(Canvas c) {
             canvas = c;
@@ -73,9 +76,18 @@ namespace WpfApp1 {
             shape.Height = canvas.ActualHeight - handle_size;
             Canvas.SetLeft(shape, 0);
             Canvas.SetTop(shape, 0);
-            shape.StrokeThickness = 2;
-            //rect.Fill = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.AliceBlue);
-            shape.Stroke = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Green);
+            shape.BorderThickness = new Thickness(1);
+
+            shape.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.DarkOrange);
+
+            StringBuilder sb = new StringBuilder();
+            sb.Append(@"<Rectangle xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' 
+                            xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml' StrokeDashArray='4 4' Stroke='Gray' StrokeThickness='1' 
+            Width = '{Binding RelativeSource={RelativeSource AncestorType={x:Type Border}}, Path=ActualWidth}'
+                  Height = '{Binding RelativeSource={RelativeSource AncestorType={x:Type Border}}, Path=ActualHeight}' Margin='-1'/>");
+            dash = (Rectangle)System.Windows.Markup.XamlReader.Parse(sb.ToString());
+            shape.Child = dash;
+
             int name_number = 1;
 
             for (double y = 1; y >= 0; y -= 0.5) {
@@ -85,8 +97,9 @@ namespace WpfApp1 {
                         handle.Name = "handle_" + name_number;
                         handle.Width = handle_size;
                         handle.Height = handle_size;
-                        handle.Stroke = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Red);
-                        handle.Fill = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Transparent);
+                        handle.Stroke = stroke_enabled;
+                        handle.Fill = fill_enabled;
+                        handle.StrokeThickness = 1;
                         Canvas.SetLeft(handle, x * shape.Width + Canvas.GetLeft(shape) );
                         Canvas.SetTop(handle, y * shape.Height + Canvas.GetTop(shape) );
                         canvas.Children.Add(handle);
@@ -393,6 +406,22 @@ namespace WpfApp1 {
             Canvas.SetLeft(bottom_right, canvas.ActualWidth - handle_size);
             Canvas.SetTop(bottom_right, canvas.ActualHeight - handle_size);
             ShapeFromHandles();
+        }
+
+        public void Disable() {
+            foreach (Rectangle h in handles) {
+                h.IsEnabled = false;
+                h.Stroke = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Transparent);
+                h.Fill = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Transparent);
+            }
+        }
+
+        public void Enable() {
+            foreach (Rectangle h in handles) {
+                h.IsEnabled = true;
+                h.Stroke = stroke_enabled;
+                h.Fill = fill_enabled;
+            }
         }
 
     }

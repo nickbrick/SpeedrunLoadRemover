@@ -35,6 +35,7 @@ namespace WpfApp1 {
         int run_start_frame = 0;
         int run_end_frame = 0;
         Mat template = new Mat();
+        double baseline_error = 0;
         Stopwatch progress_stopwatch = new Stopwatch();
         int old_value = 0;
         Size real_player_size = new Size();
@@ -56,46 +57,28 @@ namespace WpfApp1 {
             
         }
 
-
-
-        private void GrabTemplate() {
-            VideoCapture cap = new VideoCapture(video_path);
-            Mat templ = CvInvoke.Imread(@"C:\Users\Nick\Documents\sources\WpfApp1\videos\bscap0011.jpg");
-            Mat edges = new Mat(templ.Rows, templ.Cols, DepthType.Default, 1);
-            CvInvoke.Canny(templ, edges, 100, 200);
-
-            CvInvoke.NamedWindow("image", NamedWindowType.AutoSize);
-            CvInvoke.Imshow("image", edges);
-
-            Mat result = new Mat();
-            System.Drawing.Size size = edges.Size;
-            /*
-            for (int i = 0; i<10; i++) {
-                //img = cap.QueryFrame();
-                size = new System.Drawing.Size((int)(size.Width * 0.8), (int)(size.Height * 0.8));
-                CvInvoke.Resize(edges, edges, size);
-                CvInvoke.Imshow("image", edges);
-                Thread.Sleep(1000);
-
-            }
-            */
-        }
-
-        private void TestCurrentFrame() {
+        private double TestCurrentFrame() {
             var time = mediaPlayer.Position.TotalMilliseconds - 1000 / framerate;
             Mat frame = new Mat();
             VideoCapture cap = new VideoCapture(video_path);
             cap.SetCaptureProperty(CapProp.PosMsec, time);
             frame = cap.QueryFrame();
+            frame = new Mat(frame, (selection.prop_rect * video_natural_dimensions).ToRectangle());
+
             Mat templ = template;
             
                 Mat mask = new Mat();
                 double minVal = 0; double maxVal = 0;
                 System.Drawing.Point minLoc = new System.Drawing.Point(); System.Drawing.Point maxLoc = new System.Drawing.Point();
                 Mat asd = new Mat();
+            CvInvoke.NamedWindow("templ");
+            CvInvoke.NamedWindow("frame");
+            CvInvoke.Imshow("templ", templ);
+            CvInvoke.Imshow("frame", frame);
 
 
-                int result_cols = frame.Cols - template.Cols + 1;
+
+            int result_cols = frame.Cols - template.Cols + 1;
                 int result_rows = frame.Rows - template.Rows + 1;
                 Mat result = new Mat();
                 result.Create(result_cols, result_rows, DepthType.Cv32F, 3);
@@ -104,7 +87,8 @@ namespace WpfApp1 {
                 CvInvoke.MinMaxLoc(result, ref minVal, ref maxVal, ref minLoc, ref maxLoc, asd);
                 CvInvoke.Normalize(result, result, 0, 1, NormType.MinMax, DepthType.Cv32F, mask);
                 matchLoc = minLoc;
-                Debug.WriteLine(string.Format("Testing: error {0}", minVal / 10000000));
+                Debug.WriteLine(string.Format("Testing: error {0}", minVal));
+            return minVal+1000;
         }
 
         private void PreviewTemplate() {
@@ -127,6 +111,8 @@ namespace WpfApp1 {
             System.Windows.Media.Imaging.BitmapSizeOptions.FromWidthAndHeight(bm.Width, bm.Height));
             ImageBrush ib = new ImageBrush(bs);
             templ_preview.Source = ib.ImageSource;
+
+            baseline_error = TestCurrentFrame();
         }
 
         private void InitVideo() {
@@ -184,7 +170,7 @@ namespace WpfApp1 {
             VideoCapture cap = new VideoCapture(video_path);
             Mat frame = new Mat();
             Mat templ = template.Clone();
-            CvInvoke.Resize(templ, templ, new System.Drawing.Size(templ.Cols / 8, templ.Rows / 8));
+            //CvInvoke.Resize(templ, templ, new System.Drawing.Size(templ.Cols / 8, templ.Rows / 8));
             Mat mask = new Mat();
             double minVal = 0; double maxVal = 0;
             System.Drawing.Point minLoc = new System.Drawing.Point(); System.Drawing.Point maxLoc = new System.Drawing.Point();
@@ -204,7 +190,9 @@ namespace WpfApp1 {
             int last_load_start = 0;
             for (int i = start_frame; i < start_frame + chunk_length; i++) {
                 img = cap.QueryFrame();
-                CvInvoke.Resize(img, img, frame_size);
+                img = new Mat(img, (selection.prop_rect * video_natural_dimensions).ToRectangle());
+
+                //CvInvoke.Resize(img, img, frame_size);
 
                 /// Create the result matrix
                 int result_cols = img.Cols - templ.Cols + 1;
@@ -225,7 +213,7 @@ namespace WpfApp1 {
                 //else { matchLoc = maxLoc; }
                 matchLoc = minLoc;
 
-                if (minVal < Math.Pow(10, 7) * 5) { // is a match
+                if (minVal < baseline_error * 100000 /*Math.Pow(10, 7) * 5*/) { // is a match
                     loading_frames++;
                     
                     loading_frames_queue.Enqueue(i+1);
@@ -455,6 +443,8 @@ namespace WpfApp1 {
             btnOpen.IsEnabled = false;
             btnSnap.IsEnabled = false;
             btnCount.IsEnabled = false;
+            selection.Disable();
+
             progress_stopwatch.Restart();
 
             for (int core = 0; core < log_proc_count; core++) {
@@ -489,6 +479,8 @@ namespace WpfApp1 {
             btnSnap.IsEnabled = true;
             btnCount.IsEnabled = true;
             btnTest.IsEnabled = false;
+            selection.Enable();
+
             lvList.Items.Insert(0, string.Format("Work over. Elapsed time: {0}", string.Format("{0:m\\:ss}", new TimeSpan(0, 0, 0, 0, (int)master_stopwatch.ElapsedMilliseconds))));
             lvList.Items.Insert(0, "Video processed (frames): " + run_frame_count);
             lvList.Items.Insert(0, "Processing ratio: " + (int)(run_length_msec / master_stopwatch.ElapsedMilliseconds));
@@ -590,6 +582,8 @@ namespace WpfApp1 {
             mediaPlayer.UpdateLayout();
             UpdateVideoBounds();
             if (selection == null) selection = new SelectionRect(canvas);
+            selection.Reset();
+
 
             //rect.Reset();
 
