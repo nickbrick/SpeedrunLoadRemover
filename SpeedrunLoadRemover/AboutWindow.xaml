@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfApp1"
         mc:Ignorable="d"
-        Title="About" Height="221.177" Width="246.4" ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
+        Title="About" Height="221.177" Width="246.4" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" KeyDown="Window_KeyDown">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="88*"/>
@@ -17,7 +17,7 @@
         RequestNavigate="Hyperlink_RequestNavigate">
             Speedrun Load Remover 
         </Hyperlink>
-            version 0.3.0
+            version 0.4.0
     <LineBreak/>
             Made by ycarcomed.<LineBreak/>
     Testing, support, rubberducking by 
