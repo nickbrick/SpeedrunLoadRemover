@@ -9,7 +9,7 @@ using System.Diagnostics;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using System.Collections.Concurrent;
-
+using YoutubeExplode;
 
 namespace WpfApp1 {
     /// <summary>
@@ -41,6 +41,9 @@ namespace WpfApp1 {
         Size real_player_size = new Size();
         Size video_natural_dimensions = new Size();
         SelectionRect selection;
+        LogicalRect last_selection_prop;
+        double reduction_factor = 1;
+
 
 
         public MainWindow() {
@@ -66,17 +69,10 @@ namespace WpfApp1 {
             frame = new Mat(frame, (selection.prop_rect * video_natural_dimensions).ToRectangle());
 
             Mat templ = template;
-            
-                Mat mask = new Mat();
-                double minVal = 0; double maxVal = 0;
-                System.Drawing.Point minLoc = new System.Drawing.Point(); System.Drawing.Point maxLoc = new System.Drawing.Point();
-                Mat asd = new Mat();
-            CvInvoke.NamedWindow("templ");
-            CvInvoke.NamedWindow("frame");
-            CvInvoke.Imshow("templ", templ);
-            CvInvoke.Imshow("frame", frame);
-
-
+            Mat mask = new Mat();
+            double minVal = 0; double maxVal = 0;
+            System.Drawing.Point minLoc = new System.Drawing.Point(); System.Drawing.Point maxLoc = new System.Drawing.Point();
+            Mat asd = new Mat();
 
             int result_cols = frame.Cols - template.Cols + 1;
                 int result_rows = frame.Rows - template.Rows + 1;
@@ -88,7 +84,7 @@ namespace WpfApp1 {
                 CvInvoke.Normalize(result, result, 0, 1, NormType.MinMax, DepthType.Cv32F, mask);
                 matchLoc = minLoc;
                 Debug.WriteLine(string.Format("Testing: error {0}", minVal));
-            return minVal+1000;
+            return Math.Max(minVal, 1000);
         }
 
         private void PreviewTemplate() {
@@ -170,7 +166,8 @@ namespace WpfApp1 {
             VideoCapture cap = new VideoCapture(video_path);
             Mat frame = new Mat();
             Mat templ = template.Clone();
-            //CvInvoke.Resize(templ, templ, new System.Drawing.Size(templ.Cols / 8, templ.Rows / 8));
+            if (reduction_factor<1)
+                CvInvoke.Resize(templ, templ, new System.Drawing.Size((int)(templ.Cols * reduction_factor), (int)(templ.Rows * reduction_factor)));
             Mat mask = new Mat();
             double minVal = 0; double maxVal = 0;
             System.Drawing.Point minLoc = new System.Drawing.Point(); System.Drawing.Point maxLoc = new System.Drawing.Point();
@@ -180,7 +177,7 @@ namespace WpfApp1 {
             int loading_frames = 0;
             bool is_last_frame_loading = false;
 
-            var frame_size = new System.Drawing.Size((int)cap.GetCaptureProperty(CapProp.FrameWidth) / 8, (int)cap.GetCaptureProperty(CapProp.FrameHeight) / 8);
+            var frame_size = new System.Drawing.Size((int)(cap.GetCaptureProperty(CapProp.FrameWidth) * reduction_factor), (int)(cap.GetCaptureProperty(CapProp.FrameHeight) *reduction_factor));
 
             int chunk_length = run_frame_count / core_count;
             int start_frame = run_start_frame + chunk_length * core_idx;
@@ -190,9 +187,14 @@ namespace WpfApp1 {
             int last_load_start = 0;
             for (int i = start_frame; i < start_frame + chunk_length; i++) {
                 img = cap.QueryFrame();
+                var img2 = img.Clone();
+                var r = (selection.prop_rect * video_natural_dimensions).ToRectangle();
+                Debug.WriteLine(img2);
+                Debug.WriteLine(r);
                 img = new Mat(img, (selection.prop_rect * video_natural_dimensions).ToRectangle());
 
-                //CvInvoke.Resize(img, img, frame_size);
+
+                CvInvoke.Resize(img, img, new System.Drawing.Size(templ.Cols, templ.Rows));
 
                 /// Create the result matrix
                 int result_cols = img.Cols - templ.Cols + 1;
@@ -264,6 +266,7 @@ namespace WpfApp1 {
                 btnPlay.Content = "Play";
                 IsPlaying(false);
                 mediaPlayer.Pause();
+                mediaPlayer.Position = new System.TimeSpan(0, 0, 0, 0, (int)QuantizeTime(mediaPlayer.Position.TotalMilliseconds)); ;
             }
             else {
                 btnPlay.Content = "Pause";
@@ -318,18 +321,26 @@ namespace WpfApp1 {
 
                 if (!System.IO.File.Exists(dialog.FileName)) { //no file exists, try youtube
                     var video_id = System.IO.Path.GetFileNameWithoutExtension(dialog.FileName);
+                    var client = new YoutubeClient();
+                    var streamInfoSet = await client.GetVideoMediaStreamInfosAsync(video_id);
+                    var stream_list = streamInfoSet.Muxed;
+                    var stream_size = stream_list.OrderByDescending(s => s.VideoQuality).FirstOrDefault().Size;
+                    Debug.WriteLine(stream_size);
                     var url = "https://youtu.be/" + video_id;
                     var t = Task.Factory.StartNew(new Action(() => {
                         try {
                             using (var service = VideoLibrary.Client.For(VideoLibrary.YouTube.Default)) {
-                                using (var video = service.GetVideo(url)) {
+                                VideoLibrary.YouTubeVideo video = service.GetVideo(url);
                                     video_path = System.IO.Path.GetDirectoryName(dialog.FileName) + "\\" + MakeValidFileName(video.FullName);
                                     lvList.Dispatcher.Invoke((Action)(() => lvList.Items.Insert(0, "Downloading " + video.Title+ "...")));
-                                    using (var outFile = System.IO.File.OpenWrite(video_path)) {
+                                    lvList.Dispatcher.Invoke((Action)(() => lvList.Items.Insert(0, "Size: " + (int)(stream_size/1024/1024) + " MB")));
+
+                                using (var outFile = System.IO.File.OpenWrite(video_path)) {
                                         using (var ps = new CGS.ProgressStream(outFile)) {
-                                            var streamLength = (long)video.StreamLength();
-                                            if (streamLength > 0)
-                                                progress_bar.Dispatcher.Invoke((Action)(() => progress_bar.Maximum = streamLength));
+                                        
+
+                                            if (stream_size > 0)
+                                                progress_bar.Dispatcher.Invoke((Action)(() => progress_bar.Maximum = stream_size));
 
                                             ps.BytesMoved += (sender_, args) => {
                                                 progress_bar.Dispatcher.Invoke((Action)(() => progress_bar.Value = args.StreamPosition));
@@ -339,7 +350,7 @@ namespace WpfApp1 {
                                     }
                                     Debug.WriteLine(video.FullName);
                                     Debug.WriteLine(MakeValidFileName(video.FullName));
-                                } 
+                                
                             }
                         }
                     catch (System.Net.Http.HttpRequestException) {
@@ -390,6 +401,15 @@ namespace WpfApp1 {
         }
 
         private void btnSnap_Click(object sender, RoutedEventArgs e) {
+            last_selection_prop = selection.prop_rect;
+            reduction_factor = Math.Sqrt(10000 / (((selection.prop_rect.X - selection.prop_rect.x)*video_natural_dimensions.Width) * ((selection.prop_rect.Y - selection.prop_rect.y)*video_natural_dimensions.Height)));
+            reduction_factor = Math.Min(reduction_factor, 1);
+            var xx = (int)((selection.prop_rect.X - selection.prop_rect.x) * video_natural_dimensions.Width);
+            var yy = (int)((selection.prop_rect.Y - selection.prop_rect.y) * video_natural_dimensions.Height);
+            //lvList.Items.Insert(0, "Selection natural size: " + xx + "x" + yy);
+            //lvList.Items.Insert(0, "Selection reduced size: " + (int)(xx*reduction_factor) + "x" + (int)(yy* reduction_factor) + " = " + xx*yy*reduction_factor*reduction_factor);
+
+
             PreviewTemplate();
             btnCount.IsEnabled = true;
             btnTest.IsEnabled = true;
@@ -444,6 +464,10 @@ namespace WpfApp1 {
             btnSnap.IsEnabled = false;
             btnCount.IsEnabled = false;
             selection.Disable();
+            selection.prop_rect = last_selection_prop;
+            selection.AbsFromProp();
+            selection.HandlesFromAbs();
+            selection.ShapeFromHandles();
 
             progress_stopwatch.Restart();
 

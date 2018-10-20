@@ -17,7 +17,7 @@
         RequestNavigate="Hyperlink_RequestNavigate">
             Speedrun Load Remover 
         </Hyperlink>
-            version 0.4.0
+            version 0.4.1
     <LineBreak/>
             Made by ycarcomed.<LineBreak/>
     Testing, support, rubberducking by 
@@ -38,6 +38,11 @@
         libvideo
     </Hyperlink>,
     <Hyperlink 
+        NavigateUri="https://github.com/Tyrrrz/YoutubeExplode"
+        RequestNavigate="Hyperlink_RequestNavigate">
+    YoutubeExplode
+    </Hyperlink>,
+    <Hyperlink 
         NavigateUri="http://joshsmithonwpf.wordpress.com/2007/09/14/modifying-the-auto-tooltip-of-a-slider/"
         RequestNavigate="Hyperlink_RequestNavigate">
     FormattedSlider
@@ -49,7 +54,10 @@
     ProgressStream
     </Hyperlink>
             by Mel Green.
+
     <LineBreak/>
+    <LineBreak/>
+            
     Shoutouts to the JSRF community.
     <LineBreak/>
 
