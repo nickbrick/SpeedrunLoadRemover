@@ -70,16 +70,14 @@ namespace WpfApp1 {
             frame = cap.QueryFrame();
             frame = new Mat(frame, (selection.prop_rect * video_natural_dimensions).ToRectangle());
             CvInvoke.Resize(frame, frame, template.Size);
-
+            cap.Dispose();
             Mat templ = template;
             double error = 0;
             
-
             CvInvoke.NamedWindow("Ltemp");
             CvInvoke.NamedWindow("frame");
             CvInvoke.Imshow("Ltemp", templ);
             CvInvoke.Imshow("frame", frame);
-
 
             int result_cols = frame.Cols - template.Cols + 1;
             int result_rows = frame.Rows - template.Rows + 1;
@@ -163,11 +161,8 @@ namespace WpfApp1 {
                 sldrVideoTime.Minimum = 1;
                 sldrVideoTime.Maximum = video_length_msec;
                 sldrVideoTime.Value = sldrVideoTime.Minimum;
-                sldrVideoTime.Ticks = new DoubleCollection();
                 sldrVideoTime.SelectionStart = run_start_msec;
                 sldrVideoTime.SelectionEnd = run_end_msec;
-                sldrVideoTime.LargeChange = 10000;
-                sldrVideoTime.SmallChange = 100;
             }
         }
 
@@ -587,11 +582,9 @@ namespace WpfApp1 {
             UpdateVideoBounds();
             if (selection == null) selection = new SelectionRect(canvas);
             selection.Reset();
-
-
-            //rect.Reset();
-
-
+            templ_preview.Source = null;
+            btnCount.IsEnabled = false;
+            btnTest.IsEnabled = false;
         }
 
         private void mediaPlayer_SizeChanged(object sender, SizeChangedEventArgs e) {
