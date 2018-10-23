@@ -405,7 +405,15 @@ namespace WpfApp1 {
             Canvas.SetTop(top_left, 0);
             Canvas.SetLeft(bottom_right, canvas.ActualWidth - handle_size);
             Canvas.SetTop(bottom_right, canvas.ActualHeight - handle_size);
+            SolveHandleByNum('1');
+            SolveHandleByNum('9');
+            SolveHandleByNum('2');
+            SolveHandleByNum('4');
+            SolveHandleByNum('6');
+            SolveHandleByNum('8');
             ShapeFromHandles();
+            AbsFromHandles();
+            PropFromAbs();
         }
 
         public void Disable() {
