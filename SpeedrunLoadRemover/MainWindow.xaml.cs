@@ -60,46 +60,64 @@ namespace WpfApp1 {
             
         }
 
-        private double TestCurrentFrame() {
-            var time = mediaPlayer.Position.TotalMilliseconds - 1000 / framerate;
+        private double TestFrame(int Frame_idx = -1) {
+            int frame_idx = Frame_idx;
+            if (frame_idx == -1)
+                frame_idx = (int)(Math.Round(mediaPlayer.Position.TotalMilliseconds * framerate / 1000));
             Mat frame = new Mat();
             VideoCapture cap = new VideoCapture(video_path);
-            cap.SetCaptureProperty(CapProp.PosMsec, time);
+            cap.SetCaptureProperty(CapProp.PosFrames, frame_idx);
             frame = cap.QueryFrame();
             frame = new Mat(frame, (selection.prop_rect * video_natural_dimensions).ToRectangle());
+            CvInvoke.Resize(frame, frame, template.Size);
 
             Mat templ = template;
-            Mat mask = new Mat();
-            double minVal = 0; double maxVal = 0;
-            System.Drawing.Point minLoc = new System.Drawing.Point(); System.Drawing.Point maxLoc = new System.Drawing.Point();
-            Mat asd = new Mat();
+            double error = 0;
+            
+
+            CvInvoke.NamedWindow("Ltemp");
+            CvInvoke.NamedWindow("frame");
+            CvInvoke.Imshow("Ltemp", templ);
+            CvInvoke.Imshow("frame", frame);
+
 
             int result_cols = frame.Cols - template.Cols + 1;
-                int result_rows = frame.Rows - template.Rows + 1;
-                Mat result = new Mat();
-                result.Create(result_cols, result_rows, DepthType.Cv32F, 3);
-                CvInvoke.MatchTemplate(frame, template, result, TemplateMatchingType.Sqdiff);
-                System.Drawing.Point matchLoc;
-                CvInvoke.MinMaxLoc(result, ref minVal, ref maxVal, ref minLoc, ref maxLoc, asd);
-                CvInvoke.Normalize(result, result, 0, 1, NormType.MinMax, DepthType.Cv32F, mask);
-                matchLoc = minLoc;
-                Debug.WriteLine(string.Format("Testing: error {0}", minVal));
-            return Math.Max(minVal, 1000);
+            int result_rows = frame.Rows - template.Rows + 1;
+            if (result_cols != 1 || result_rows != 1) { MessageBox.Show("Template is not the same size as frame.", "Error", MessageBoxButton.OK, MessageBoxImage.Error); return int.MaxValue; }
+
+            Mat result = new Mat(1, 1, DepthType.Cv32F, 1);
+            CvInvoke.MatchTemplate(frame, template, result, TemplateMatchingType.Sqdiff);
+            error = result.GetValueRange().Min;
+            Debug.WriteLine(string.Format("Testing: error {0}", Math.Max(error, 1000)));
+            return Math.Max(error, 1000);
         }
 
         private void PreviewTemplate() {
-            //var time = mediaPlayer.Position.TotalMilliseconds - 1000 / framerate;
-            int frame = (int)(Math.Round(mediaPlayer.Position.TotalMilliseconds * framerate / 1000));
+            //var time = mediaPlayer.Position.TotalMilliseconds;// - 1000 / framerate;
+            int frame_idx = (int)(Math.Round(mediaPlayer.Position.TotalMilliseconds * framerate / 1000));
+            Debug.WriteLine(frame_idx);
             VideoCapture cap = new VideoCapture(video_path);
+            if (frame_idx == cap.GetCaptureProperty(CapProp.FrameCount))
+                frame_idx-=3;
             //cap.SetCaptureProperty(CapProp.PosMsec, time);
-            cap.SetCaptureProperty(CapProp.PosFrames, frame-1);
+            cap.SetCaptureProperty(CapProp.PosFrames, frame_idx);
 
 
-            template = cap.QueryFrame();
-            template = new Mat(template, (selection.prop_rect*video_natural_dimensions).ToRectangle());
+            var large_template = new Mat(cap.QueryFrame(), (selection.prop_rect * video_natural_dimensions).ToRectangle());
+            CvInvoke.Resize(large_template, template, new System.Drawing.Size((int)(large_template.Cols * reduction_factor), (int)(large_template.Rows * reduction_factor)));
 
+            baseline_error = int.MaxValue;
+            for (int f = frame_idx - 1; f < frame_idx + 2; f += 2) {
+                cap.SetCaptureProperty(CapProp.PosFrames, f);
+                double e = TestFrame(f);
+                Debug.WriteLine("f " + f + " e: " + e);
+                if (e < baseline_error) baseline_error = e;
+            }
             cap.Dispose();
-            System.Drawing.Bitmap bm = template.Bitmap;
+            baseline_error *= 10000;
+            Debug.WriteLine("base " + baseline_error);
+
+            System.Drawing.Bitmap bm = large_template.Bitmap;
             System.Windows.Media.Imaging.BitmapSource bs = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
             bm.GetHbitmap(),
             IntPtr.Zero,
@@ -108,7 +126,8 @@ namespace WpfApp1 {
             ImageBrush ib = new ImageBrush(bs);
             templ_preview.Source = ib.ImageSource;
 
-            baseline_error = TestCurrentFrame();
+
+
         }
 
         private void InitVideo() {
@@ -164,74 +183,32 @@ namespace WpfApp1 {
             stopWatch.Start();
 
             VideoCapture cap = new VideoCapture(video_path);
-            Mat frame = new Mat();
-            Mat templ = template.Clone();
-            if (reduction_factor<1)
-                CvInvoke.Resize(templ, templ, new System.Drawing.Size((int)(templ.Cols * reduction_factor), (int)(templ.Rows * reduction_factor)));
-            Mat mask = new Mat();
-            double minVal = 0; double maxVal = 0;
-            System.Drawing.Point minLoc = new System.Drawing.Point(); System.Drawing.Point maxLoc = new System.Drawing.Point();
-            Mat asd = new Mat();
-            Mat img; Mat result = new Mat();
-            Mat img_display = new Mat();
+            Mat templ = template;//.Clone();
+            double error;
+            Mat frame;
             int loading_frames = 0;
-            bool is_last_frame_loading = false;
-
-            var frame_size = new System.Drawing.Size((int)(cap.GetCaptureProperty(CapProp.FrameWidth) * reduction_factor), (int)(cap.GetCaptureProperty(CapProp.FrameHeight) *reduction_factor));
 
             int chunk_length = run_frame_count / core_count;
             int start_frame = run_start_frame + chunk_length * core_idx;
             if (core_idx == core_count - 1) chunk_length = run_end_frame - start_frame;
             Debug.WriteLine("core {0} of {1}: start frame {2}, length {3}.", core_idx, core_count, start_frame, chunk_length);
             cap.SetCaptureProperty(CapProp.PosFrames, start_frame);
-            int last_load_start = 0;
             for (int i = start_frame; i < start_frame + chunk_length; i++) {
-                img = cap.QueryFrame();
-                var img2 = img.Clone();
-                var r = (selection.prop_rect * video_natural_dimensions).ToRectangle();
-                Debug.WriteLine(img2);
-                Debug.WriteLine(r);
-                img = new Mat(img, (selection.prop_rect * video_natural_dimensions).ToRectangle());
+                frame = cap.QueryFrame();
+                frame = new Mat(frame, (selection.prop_rect * video_natural_dimensions).ToRectangle());
+                CvInvoke.Resize(frame, frame, new System.Drawing.Size(templ.Cols, templ.Rows));
 
+                int result_cols = frame.Cols - templ.Cols + 1;
+                int result_rows = frame.Rows - templ.Rows + 1;
+                if (result_cols != 1 || result_rows != 1) { MessageBox.Show("Template is not the same size as frame.", "Error", MessageBoxButton.OK, MessageBoxImage.Error); return int.MaxValue; }
+                Mat result = new Mat(1, 1, DepthType.Cv32F, 1);
 
-                CvInvoke.Resize(img, img, new System.Drawing.Size(templ.Cols, templ.Rows));
+                CvInvoke.MatchTemplate(frame, templ, result, TemplateMatchingType.Sqdiff);
+                error = result.GetValueRange().Min;
 
-                /// Create the result matrix
-                int result_cols = img.Cols - templ.Cols + 1;
-                int result_rows = img.Rows - templ.Rows + 1;
-
-                result.Create(result_cols, result_rows, DepthType.Cv32F, 3);
-
-                /// Do the Matching and Normalize
-                CvInvoke.MatchTemplate(img, templ, result, TemplateMatchingType.Sqdiff);
-
-                /// Localizing the best match with minMaxLoc
-                System.Drawing.Point matchLoc;
-                CvInvoke.MinMaxLoc(result, ref minVal, ref maxVal, ref minLoc, ref maxLoc, asd);
-                CvInvoke.Normalize(result, result, 0, 1, NormType.MinMax, DepthType.Cv32F, mask);
-
-                /// For SQDIFF and SQDIFF_NORMED, the best matches are lower values. For all the other methods, the higher the better
-                //if (match_method == CV_TM_SQDIFF || match_method == CV_TM_SQDIFF_NORMED) { matchLoc = minLoc; }
-                //else { matchLoc = maxLoc; }
-                matchLoc = minLoc;
-
-                if (minVal < baseline_error * 100000 /*Math.Pow(10, 7) * 5*/) { // is a match
+                if (error < baseline_error) { // is a match
                     loading_frames++;
-                    
                     loading_frames_queue.Enqueue(i+1);
-                    if (!is_last_frame_loading) {
-                        var tick = Math.Floor(cap.GetCaptureProperty((int)CapProp.PosMsec) / 1000);
-                        loading_ticks_queue.Enqueue(tick);
-
-                        is_last_frame_loading = true;
-                        last_load_start = (int)tick;
-                    }
-                }
-                else {
-                    if (is_last_frame_loading) {
-                        for (var sec = last_load_start + 1; sec < Math.Floor(cap.GetCaptureProperty((int)CapProp.PosMsec) / 1000); sec++) { loading_ticks_queue.Enqueue(sec); }
-                        is_last_frame_loading = false;
-                    }
                 }
                 progress_bar.Dispatcher.Invoke((Action)(() => progress_bar.Value += 1));
             }
@@ -239,10 +216,8 @@ namespace WpfApp1 {
             return loading_frames;
         }
 
-
         private void IsPlaying(bool flag) {
             is_playing = flag;
-
         }
 
         private static string MakeValidFileName(string name) {
@@ -266,7 +241,7 @@ namespace WpfApp1 {
                 btnPlay.Content = "Play";
                 IsPlaying(false);
                 mediaPlayer.Pause();
-                mediaPlayer.Position = new System.TimeSpan(0, 0, 0, 0, (int)QuantizeTime(mediaPlayer.Position.TotalMilliseconds)); ;
+                mediaPlayer.Position = new System.TimeSpan(0, 0, 0, 0, (int)QuantizeTime(mediaPlayer.Position.TotalMilliseconds));
             }
             else {
                 btnPlay.Content = "Pause";
@@ -279,7 +254,9 @@ namespace WpfApp1 {
             mediaPlayer.Pause();
             IsPlaying(false);
             btnPlay.Content = "Play";
-            mediaPlayer.Position -= TimeSpan.FromMilliseconds(1000 / framerate);
+            //mediaPlayer.Position -= TimeSpan.FromMilliseconds(1000 / framerate);
+            mediaPlayer.Position = new System.TimeSpan(0, 0, 0, 0, (int)QuantizeTime(mediaPlayer.Position.TotalMilliseconds));
+
             mediaPlayer.Play();
             mediaPlayer.Pause();
 
@@ -387,20 +364,8 @@ namespace WpfApp1 {
             }
         }
 
-        private void sliderSyncTimer_Tick(object sender, EventArgs e) {
-            if (is_playing) sldrVideoTime.Value = mediaPlayer.Position.TotalMilliseconds;
-            int frame = (int)(Math.Round(mediaPlayer.Position.TotalMilliseconds * framerate / 1000));
-            if (loading_frames_queue.Contains(frame)) {
-                led_matched.Fill = Brushes.Green;
-            }
-            else {
-                led_matched.Fill = Brushes.Transparent;
-
-            }
-            txt_time.Text = mediaPlayer.Position + " " + frame;
-        }
-
         private void btnSnap_Click(object sender, RoutedEventArgs e) {
+            if (is_playing) mediaPlayer.Pause();
             last_selection_prop = selection.prop_rect;
             reduction_factor = Math.Sqrt(10000 / (((selection.prop_rect.X - selection.prop_rect.x)*video_natural_dimensions.Width) * ((selection.prop_rect.Y - selection.prop_rect.y)*video_natural_dimensions.Height)));
             reduction_factor = Math.Min(reduction_factor, 1);
@@ -413,6 +378,21 @@ namespace WpfApp1 {
             PreviewTemplate();
             btnCount.IsEnabled = true;
             btnTest.IsEnabled = true;
+            if (is_playing) mediaPlayer.Play();
+
+        }
+
+        private void sliderSyncTimer_Tick(object sender, EventArgs e) {
+            if (is_playing) sldrVideoTime.Value = mediaPlayer.Position.TotalMilliseconds;
+            int frame_idx = (int)(Math.Round(mediaPlayer.Position.TotalMilliseconds * framerate / 1000));
+            if (loading_frames_queue.Contains(frame_idx)) {
+                led_matched.Fill = Brushes.Green;
+            }
+            else {
+                led_matched.Fill = Brushes.Transparent;
+
+            }
+            txt_time.Text = mediaPlayer.Position + " " + frame_idx;
         }
 
         private void sldrVideoTime_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e) {
@@ -578,7 +558,7 @@ namespace WpfApp1 {
         }
 
         private void btnTest_Click(object sender, RoutedEventArgs e) {
-            TestCurrentFrame();
+            TestFrame();
         }
 
         private void mediaPlayer_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
