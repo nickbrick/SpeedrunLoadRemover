@@ -42,7 +42,7 @@ namespace FormattedSliderDemo
 		{
 			if (!string.IsNullOrEmpty(this.AutoToolTipFormat))
 			{
-                var timespan = new System.TimeSpan(0, 0, 0, 0, System.Int32.Parse((string)this.AutoToolTip.Content, System.Globalization.NumberStyles.AllowThousands));
+                var timespan = new System.TimeSpan(0, 0, 0, 0, System.Int32.Parse((string)this.AutoToolTip.Content, System.Globalization.NumberStyles.AllowThousands) - 1);
                 var timestring = string.Format("{0:h\\:mm\\:ss\\.fff}", timespan);
                 this.AutoToolTip.Content = timestring;
             }
