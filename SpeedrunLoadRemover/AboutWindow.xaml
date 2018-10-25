@@ -1,11 +1,11 @@
-﻿<Window x:Class="WpfApp1.AboutWindow"
+﻿<Window x:Class="SLR.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:WpfApp1"
+        xmlns:local="clr-namespace:SLR"
         mc:Ignorable="d"
-        Title="About" Height="221.177" Width="246.4" ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
+        Title="About" Height="221.177" Width="246.4" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" KeyDown="Window_KeyDown">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="88*"/>
@@ -17,7 +17,7 @@
         RequestNavigate="Hyperlink_RequestNavigate">
             Speedrun Load Remover 
         </Hyperlink>
-            version 0.3.0
+            version 0.4.2
     <LineBreak/>
             Made by ycarcomed.<LineBreak/>
     Testing, support, rubberducking by 
@@ -38,6 +38,11 @@
         libvideo
     </Hyperlink>,
     <Hyperlink 
+        NavigateUri="https://github.com/Tyrrrz/YoutubeExplode"
+        RequestNavigate="Hyperlink_RequestNavigate">
+    YoutubeExplode
+    </Hyperlink>,
+    <Hyperlink 
         NavigateUri="http://joshsmithonwpf.wordpress.com/2007/09/14/modifying-the-auto-tooltip-of-a-slider/"
         RequestNavigate="Hyperlink_RequestNavigate">
     FormattedSlider
@@ -49,7 +54,10 @@
     ProgressStream
     </Hyperlink>
             by Mel Green.
+
     <LineBreak/>
+    <LineBreak/>
+            
     Shoutouts to the JSRF community.
     <LineBreak/>
 
