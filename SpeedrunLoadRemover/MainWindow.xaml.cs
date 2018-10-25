@@ -37,12 +37,14 @@ namespace WpfApp1 {
         Mat template = new Mat();
         double baseline_error = 0;
         Stopwatch progress_stopwatch = new Stopwatch();
-        int old_value = 0;
+        int progress_old_value = 0;
         Size real_player_size = new Size();
         Size video_natural_dimensions = new Size();
         SelectionRect selection;
         LogicalRect last_selection_prop;
         double reduction_factor = 1;
+        System.Threading.CancellationTokenSource count_cancellation_source = new System.Threading.CancellationTokenSource();
+
 
 
 
@@ -86,8 +88,12 @@ namespace WpfApp1 {
             Mat result = new Mat(1, 1, DepthType.Cv32F, 1);
             CvInvoke.MatchTemplate(frame, template, result, TemplateMatchingType.Sqdiff);
             error = result.GetValueRange().Min;
-            Debug.WriteLine(string.Format("Testing: error {0}", Math.Max(error, 1000)));
-            return Math.Max(error, 1000);
+            var floor = (selection.abs_rect.X - selection.abs_rect.x) * (selection.abs_rect.Y - selection.abs_rect.y) / 100;
+            Debug.WriteLine(string.Format("Testing: error {0}", Math.Max(error, floor)));
+            
+            Debug.WriteLine(string.Format("floor {0}", floor));
+
+            return Math.Max(error, floor);
         }
 
         private void PreviewTemplate() {
@@ -104,15 +110,16 @@ namespace WpfApp1 {
             var large_template = new Mat(cap.QueryFrame(), (selection.prop_rect * video_natural_dimensions).ToRectangle());
             CvInvoke.Resize(large_template, template, new System.Drawing.Size((int)(large_template.Cols * reduction_factor), (int)(large_template.Rows * reduction_factor)));
 
-            baseline_error = int.MaxValue;
-            for (int f = frame_idx - 1; f < frame_idx + 2; f += 2) {
+            baseline_error = double.PositiveInfinity;
+            int step = 3;
+            for (int f = frame_idx - 1* step; f < frame_idx + 2* step; f += 2* step) {
                 cap.SetCaptureProperty(CapProp.PosFrames, f);
                 double e = TestFrame(f);
                 Debug.WriteLine("f " + f + " e: " + e);
                 if (e < baseline_error) baseline_error = e;
             }
             cap.Dispose();
-            baseline_error *= 10000;
+            baseline_error *= 1000;
             Debug.WriteLine("base " + baseline_error);
 
             System.Drawing.Bitmap bm = large_template.Bitmap;
@@ -173,7 +180,7 @@ namespace WpfApp1 {
             progress_bar.Maximum = run_frame_count;
         }
 
-        private int CountLoadsToQueue(int core_idx, int core_count) {
+        private int CountLoadsToQueue(int core_idx, int core_count, System.Threading.CancellationToken token) {
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
 
@@ -189,23 +196,36 @@ namespace WpfApp1 {
             Debug.WriteLine("core {0} of {1}: start frame {2}, length {3}.", core_idx, core_count, start_frame, chunk_length);
             cap.SetCaptureProperty(CapProp.PosFrames, start_frame);
             for (int i = start_frame; i < start_frame + chunk_length; i++) {
-                frame = cap.QueryFrame();
-                frame = new Mat(frame, (selection.prop_rect * video_natural_dimensions).ToRectangle());
-                CvInvoke.Resize(frame, frame, new System.Drawing.Size(templ.Cols, templ.Rows));
+                if (!token.IsCancellationRequested) {
 
-                int result_cols = frame.Cols - templ.Cols + 1;
-                int result_rows = frame.Rows - templ.Rows + 1;
-                if (result_cols != 1 || result_rows != 1) { MessageBox.Show("Template is not the same size as frame.", "Error", MessageBoxButton.OK, MessageBoxImage.Error); return int.MaxValue; }
-                Mat result = new Mat(1, 1, DepthType.Cv32F, 1);
+                    progress_bar.Dispatcher.Invoke((Action)(() => progress_bar.Value += 1));
+                    frame = cap.QuerySmallFrame();
+                    if (frame == null) { Debug.WriteLine("cant even i: " + i); continue; }
+                    frame = new Mat(frame, (selection.prop_rect * video_natural_dimensions * new Size(0.5, 0.5)).ToRectangle());
+                    CvInvoke.Resize(frame, frame, new System.Drawing.Size(templ.Cols, templ.Rows));
 
-                CvInvoke.MatchTemplate(frame, templ, result, TemplateMatchingType.Sqdiff);
-                error = result.GetValueRange().Min;
+                    int result_cols = frame.Cols - templ.Cols + 1;
+                    int result_rows = frame.Rows - templ.Rows + 1;
+                    if (result_cols != 1 || result_rows != 1) { MessageBox.Show("Template is not the same size as frame.", "Error", MessageBoxButton.OK, MessageBoxImage.Error); return 0; }
+                    Mat result = new Mat(1, 1, DepthType.Cv32F, 1);
 
-                if (error < baseline_error) { // is a match
-                    loading_frames++;
-                    loading_frames_queue.Enqueue(i+1);
+                    CvInvoke.MatchTemplate(frame, templ, result, TemplateMatchingType.Sqdiff);
+                    error = result.GetValueRange().Min;
+
+                    if (error < baseline_error) { // is a match
+                        loading_frames++;
+                        loading_frames_queue.Enqueue(i + 1);
+                    }
+
                 }
-                progress_bar.Dispatcher.Invoke((Action)(() => progress_bar.Value += 1));
+                else {
+                    progress_bar.Dispatcher.Invoke((Action)(() => progress_bar.Value =0));
+                    lbl_eta.Dispatcher.Invoke((Action)(() => lbl_eta.Content= ""));
+                    progress_old_value = 0;
+                    stopWatch.Stop();
+                    token.ThrowIfCancellationRequested();
+                    return 0;
+                }
             }
             stopWatch.Stop();
             return loading_frames;
@@ -246,6 +266,8 @@ namespace WpfApp1 {
         }
 
         private void btnMoveBack_Click(object sender, RoutedEventArgs e) {
+            double step = 1000 / framerate;
+            if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift)) step = 1000;
             mediaPlayer.Pause();
             IsPlaying(false);
             btnPlay.Content = "Play";
@@ -255,17 +277,21 @@ namespace WpfApp1 {
             mediaPlayer.Play();
             mediaPlayer.Pause();
 
-            sldrVideoTime.Value -= 1000 / framerate;
+            sldrVideoTime.Value -= step;
         }
 
         private void btnMoveForward_Click(object sender, RoutedEventArgs e) {
+            double step = 1000 / framerate;
+            if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift)) step = 1000;
             mediaPlayer.Pause();
             IsPlaying(false);
             btnPlay.Content = "Play";
-            mediaPlayer.Position += TimeSpan.FromMilliseconds(1000/framerate);
+            //mediaPlayer.Position += TimeSpan.FromMilliseconds(step);
+            mediaPlayer.Position = new System.TimeSpan(0, 0, 0, 0, (int)QuantizeTime(mediaPlayer.Position.TotalMilliseconds));
+
             mediaPlayer.Play();
             mediaPlayer.Pause();
-            sldrVideoTime.Value += 1000 / framerate;
+            sldrVideoTime.Value += step;
         }
 
 
@@ -379,7 +405,7 @@ namespace WpfApp1 {
 
         private void sliderSyncTimer_Tick(object sender, EventArgs e) {
             if (is_playing) sldrVideoTime.Value = mediaPlayer.Position.TotalMilliseconds;
-            int frame_idx = (int)(Math.Round(mediaPlayer.Position.TotalMilliseconds * framerate / 1000));
+            int frame_idx = (int)(Math.Round(mediaPlayer.Position.TotalMilliseconds * framerate / 1000))+1;
             if (loading_frames_queue.Contains(frame_idx)) {
                 led_matched.Fill = Brushes.Green;
             }
@@ -424,69 +450,82 @@ namespace WpfApp1 {
         }
 
         private async void btnCount_Click(object sender, RoutedEventArgs e) {
-            Stopwatch master_stopwatch = new Stopwatch();
-            master_stopwatch.Start();
-            is_working = true;
-            List<Task> task_list = new List<Task>();
-            ConcurrentBag<int> frame_count_bag = new ConcurrentBag<int>();
-            loading_frames_queue = new ConcurrentQueue<int>();
+            if (btnCount.Content.ToString() == "Cancel") { btnCount.Content = "Count"; count_cancellation_source.Cancel(); }
+            else {
+                btnCount.Content = "Cancel";
+                Stopwatch master_stopwatch = new Stopwatch();
+                master_stopwatch.Start();
+                is_working = true;
+                List<Task> task_list = new List<Task>();
+                ConcurrentBag<int> frame_count_bag = new ConcurrentBag<int>();
+                loading_frames_queue = new ConcurrentQueue<int>();
 
-            sldrVideoTime.Ticks = new DoubleCollection(new double[] { 10 });
-            DoubleCollection times = new DoubleCollection();
-            btnMarkStart.IsEnabled = false;
-            btnMarkEnd.IsEnabled = false;
-            btnOpen.IsEnabled = false;
-            btnSnap.IsEnabled = false;
-            btnCount.IsEnabled = false;
-            selection.Disable();
-            selection.prop_rect = last_selection_prop;
-            selection.AbsFromProp();
-            selection.HandlesFromAbs();
-            selection.ShapeFromHandles();
+                sldrVideoTime.Ticks = new DoubleCollection(new double[] { 10 });
+                DoubleCollection times = new DoubleCollection();
+                btnMarkStart.IsEnabled = false;
+                btnMarkEnd.IsEnabled = false;
+                btnOpen.IsEnabled = false;
+                btnSnap.IsEnabled = false;
+                //btnCount.IsEnabled = false;
+                selection.Disable();
+                selection.prop_rect = last_selection_prop;
+                selection.AbsFromProp();
+                selection.HandlesFromAbs();
+                selection.ShapeFromHandles();
+                
 
-            progress_stopwatch.Restart();
+                progress_stopwatch.Restart();
+                for (int core = 0; core < log_proc_count; core++) {
+                    object core_ = core;
+                    var t = Task.Factory.StartNew(new Action<object>((o) => {
+                        var frame_count = CountLoadsToQueue((int)o, log_proc_count, count_cancellation_source.Token);
+                        frame_count_bag.Add(frame_count);
+                    }), core_);
+                    task_list.Add(t);
+                }
+                try {
+                    await Task.WhenAll(task_list.ToArray());
+                foreach (double elm in loading_ticks_queue) {
+                    times.Add(elm);
+                }
+                int loading_frame_count = 0;
+                foreach (int elm in frame_count_bag) {
+                    loading_frame_count += elm;
+                }
+                sldrVideoTime.Ticks = times;
+                foreach (Task t in task_list) {
+                    t.Dispose();
+                }
 
-            for (int core = 0; core < log_proc_count; core++) {
-                object core_ = core;
-                var t = Task.Factory.StartNew(new Action<object>((o) => {
-                    var frame_count = CountLoadsToQueue((int)o, log_proc_count);
-                    frame_count_bag.Add(frame_count);
-                }), core_);
-                task_list.Add(t);
+                master_stopwatch.Stop();
+
+                
+                lvList.Items.Insert(0, string.Format("Work over. Elapsed time: {0}", string.Format("{0:m\\:ss}", new TimeSpan(0, 0, 0, 0, (int)master_stopwatch.ElapsedMilliseconds))));
+                lvList.Items.Insert(0, "Video processed (frames): " + run_frame_count);
+                lvList.Items.Insert(0, "Processing ratio: " + (int)(run_length_msec / master_stopwatch.ElapsedMilliseconds));
+                lvList.Items.Insert(0, "Loading frame count: " + loading_frame_count);
+                lvList.Items.Insert(0, "Loading time: " + string.Format("{0:m\\:ss\\.fff}", new TimeSpan(0, 0, 0, 0, (int)(loading_frame_count * 1000 / framerate))));
+                lvList.Items.Insert(0, "RTA time: " + string.Format("{0:h\\:mm\\:ss\\.fff}", new TimeSpan(0, 0, 0, 0, (int)run_length_msec)));
+                lvList.Items.Insert(0, "Loadless time: " + string.Format("{0:h\\:mm\\:ss\\.fff}", new TimeSpan(0, 0, 0, 0, (int)((run_frame_count - loading_frame_count) * 1000 / framerate))));
+                }
+                catch (OperationCanceledException) {
+                    count_cancellation_source = new System.Threading.CancellationTokenSource();
+                    master_stopwatch.Stop();
+
+                }
+                finally {
+                    GC.Collect();
+                    is_working = false;
+
+                    btnMarkStart.IsEnabled = true;
+                    btnMarkEnd.IsEnabled = true;
+                    btnOpen.IsEnabled = true;
+                    btnSnap.IsEnabled = true;
+                    btnCount.Content = "Count";
+                    btnTest.IsEnabled = false;
+                    selection.Enable();
+                }
             }
-
-            await Task.WhenAll(task_list.ToArray());
-            foreach (double elm in loading_ticks_queue) {
-                times.Add(elm);
-            }
-            int loading_frame_count = 0;
-            foreach (int elm in frame_count_bag) {
-                loading_frame_count += elm;
-            }
-            sldrVideoTime.Ticks = times;
-            foreach (Task t in task_list) {
-                t.Dispose();
-            }
-            GC.Collect();
-            master_stopwatch.Stop();
-
-            is_working = false;
-
-            btnMarkStart.IsEnabled = true;
-            btnMarkEnd.IsEnabled = true;
-            btnOpen.IsEnabled = true;
-            btnSnap.IsEnabled = true;
-            btnCount.IsEnabled = true;
-            btnTest.IsEnabled = false;
-            selection.Enable();
-
-            lvList.Items.Insert(0, string.Format("Work over. Elapsed time: {0}", string.Format("{0:m\\:ss}", new TimeSpan(0, 0, 0, 0, (int)master_stopwatch.ElapsedMilliseconds))));
-            lvList.Items.Insert(0, "Video processed (frames): " + run_frame_count);
-            lvList.Items.Insert(0, "Processing ratio: " + (int)(run_length_msec / master_stopwatch.ElapsedMilliseconds));
-            lvList.Items.Insert(0, "Loading frame count: " + loading_frame_count);
-            lvList.Items.Insert(0, "Loading time: " + string.Format("{0:m\\:ss\\.fff}", new TimeSpan(0, 0, 0, 0, (int)(loading_frame_count * 1000 / framerate))));
-            lvList.Items.Insert(0, "RTA time: " + string.Format("{0:h\\:mm\\:ss\\.fff}", new TimeSpan(0, 0, 0, 0, (int)run_length_msec)));
-            lvList.Items.Insert(0, "Loadless time: " + string.Format("{0:h\\:mm\\:ss\\.fff}", new TimeSpan(0, 0, 0, 0, (int)((run_frame_count - loading_frame_count) * 1000 / framerate))));
         }
 
         private void btnMarkStart_Click(object sender, RoutedEventArgs e) {
@@ -527,20 +566,21 @@ namespace WpfApp1 {
         private void progress_bar_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
             //var value = (int)(progress_bar.Value / 1000);
             int percent = (int)(progress_bar.Value * 100 / progress_bar.Maximum);
-            if (percent > old_value) {
+            if (percent > progress_old_value) {
                 var time_msec = progress_stopwatch.ElapsedMilliseconds;
                 //double rate = 1 / (double)time_msec;
                 double eta_msec = (1 - (progress_bar.Value / progress_bar.Maximum)) *100 * time_msec;
                 string eta = "Time left: " + string.Format("{0:h\\:mm\\:ss}", new TimeSpan(0, 0, 0, 0, (int)eta_msec));
                 lbl_eta.Content = eta;
                 progress_stopwatch.Restart();
-                old_value = percent;
+                progress_old_value = percent;
             }
             if (progress_bar.Value >= progress_bar.Maximum) {
                 progress_bar.Value = 0;
-                old_value = 0;
+                progress_old_value = 0;
                 lbl_eta.Content = "";
             }
+            this.taskBarItemInfo1.ProgressValue = progress_bar.Value / progress_bar.Maximum;
         }
 
         private void mediaPlayer_MediaEnded(object sender, RoutedEventArgs e) {
@@ -593,6 +633,21 @@ namespace WpfApp1 {
                 selection.AbsFromProp();
                 selection.HandlesFromAbs();
                 selection.ShapeFromHandles();
+            }
+        }
+
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e) {
+            if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift)) {
+                btnMoveBack.Content = "<<";
+                btnMoveForward.Content = ">>";
+            }
+
+        }
+
+        private void Window_PreviewKeyUp(object sender, KeyEventArgs e) {
+            if (Keyboard.IsKeyUp(Key.LeftShift) || Keyboard.IsKeyUp(Key.RightShift)) {
+                btnMoveBack.Content = "<";
+                btnMoveForward.Content = ">";
             }
         }
     }
