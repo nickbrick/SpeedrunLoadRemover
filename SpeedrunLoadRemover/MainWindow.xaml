@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:WpfApp1"
         xmlns:fsldr="clr-namespace:FormattedSliderDemo"
         mc:Ignorable="d"
-        Title="Speedrun Load Remover 0.4" Height="720" Width="1051.6" MinWidth="1050" MinHeight="720" SizeChanged="Window_SizeChanged">
+        Title="Speedrun Load Remover 0.4" Height="720" Width="1051.6" MinWidth="1050" MinHeight="720" SizeChanged="Window_SizeChanged" PreviewKeyDown="Window_PreviewKeyDown" PreviewKeyUp="Window_PreviewKeyUp">
     <Grid x:Name="grid">
         <Grid.RowDefinitions>
             <RowDefinition Height="449*"/>
@@ -61,4 +61,12 @@
         <TextBox x:Name="txt_time" HorizontalAlignment="Left" Height="23" Margin="10,423,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="156"/>
 
     </Grid>
+    <Window.TaskbarItemInfo>
+        <TaskbarItemInfo x:Name="taskBarItemInfo1" 
+                         ThumbnailClipMargin="80,0,80,140"
+                         Description="Taskbar Item Info Sample"
+                         ProgressValue="0"
+                         ProgressState="Normal">
+        </TaskbarItemInfo>
+    </Window.TaskbarItemInfo>
 </Window>
