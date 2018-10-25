@@ -66,6 +66,7 @@ namespace WpfApp1 {
         Rectangle bottom_right;
         System.Windows.Media.SolidColorBrush stroke_enabled = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.OrangeRed);
         System.Windows.Media.SolidColorBrush fill_enabled = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.White);
+        private Point init_mouse = new Point();
 
         public SelectionRect(Canvas c) {
             canvas = c;
@@ -87,6 +88,12 @@ namespace WpfApp1 {
                   Height = '{Binding RelativeSource={RelativeSource AncestorType={x:Type Border}}, Path=ActualHeight}' Margin='-1'/>");
             dash = (Rectangle)System.Windows.Markup.XamlReader.Parse(sb.ToString());
             shape.Child = dash;
+            dash.Fill = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Transparent);
+            dash.Cursor = Cursors.SizeAll;
+            dash.PreviewMouseLeftButtonDown += Shape_PreviewMouseLeftButtonDown;
+            dash.PreviewMouseMove += Shape_PreviewMouseMove;
+            dash.PreviewMouseLeftButtonUp += Shape_PreviewMouseLeftButtonUp;
+
 
             int name_number = 1;
 
@@ -144,6 +151,38 @@ namespace WpfApp1 {
             ShapeFromHandles();
         }
 
+
+        private void Shape_PreviewMouseMove(object sender, MouseEventArgs e) {
+            if (Mouse.LeftButton == MouseButtonState.Pressed) {
+                Canvas.SetLeft(shape, Mouse.GetPosition(canvas).X - init_mouse.X);
+                if (Mouse.GetPosition(canvas).X - init_mouse.X < 0)
+                    Canvas.SetLeft(shape, 0);
+                if (Mouse.GetPosition(canvas).X - init_mouse.X > canvas.ActualWidth - shape.ActualWidth)
+                    Canvas.SetLeft(shape, canvas.ActualWidth - shape.ActualWidth);
+                Canvas.SetTop(shape, Mouse.GetPosition(canvas).Y - init_mouse.Y);
+                if (Mouse.GetPosition(canvas).Y - init_mouse.Y < 0)
+                    Canvas.SetTop(shape, 0);
+                if (Mouse.GetPosition(canvas).Y - init_mouse.Y > canvas.ActualHeight - shape.ActualHeight)
+                    Canvas.SetTop(shape, canvas.ActualHeight - shape.ActualHeight);
+                AbsFromShape();
+                PropFromAbs();
+                HandlesFromAbs();
+                
+
+            }
+        }
+
+        private void Shape_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
+            Rectangle s = (Rectangle)sender;
+            s.CaptureMouse();
+            init_mouse = Mouse.GetPosition(shape);
+        }
+
+        private void Shape_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e) {
+            Rectangle s = (Rectangle)sender;
+            s.ReleaseMouseCapture();
+        }
+
         public void AbsFromProp() {
             abs_rect = prop_rect * new Size(canvas.ActualWidth, canvas.ActualHeight);
         }
@@ -161,12 +200,14 @@ namespace WpfApp1 {
         private void handle_PreviewMouseLeftButtonDown(object sender, MouseEventArgs e) {
             Rectangle h = (Rectangle)sender;
             h.CaptureMouse();
+            init_mouse = Mouse.GetPosition(h);
+
             Debug.WriteLine(sender);
         }
 
         private void handle_PreviewMouseLeftButtonUp(object sender, MouseEventArgs e) {
-            Rectangle r = (Rectangle)sender;
-            r.ReleaseMouseCapture();
+            Rectangle h = (Rectangle)sender;
+            h.ReleaseMouseCapture();
         }
         private void handle_PreviewMouseMove(object sender, MouseEventArgs e) {
             if (Mouse.LeftButton == MouseButtonState.Pressed) {
@@ -239,14 +280,14 @@ namespace WpfApp1 {
             Rectangle h = handles.Find(i => i.Name.Last() == n);
             switch (f) {
                 case Freedom.LeftRight:
-                    Canvas.SetLeft(h, Mouse.GetPosition(canvas).X - handle_size/2);
+                    Canvas.SetLeft(h, Mouse.GetPosition(canvas).X - handle_size/2 - init_mouse.X);
                     break;
                 case Freedom.UpDown:
-                    Canvas.SetTop(h, Mouse.GetPosition(canvas).Y - handle_size/2);
+                    Canvas.SetTop(h, Mouse.GetPosition(canvas).Y - handle_size/2 - init_mouse.Y);
                     break;
                 case Freedom.Both:
-                    Canvas.SetLeft(h, Mouse.GetPosition(canvas).X - handle_size/2);
-                    Canvas.SetTop(h, Mouse.GetPosition(canvas).Y - handle_size/2);
+                    Canvas.SetLeft(h, Mouse.GetPosition(canvas).X - handle_size/2 - init_mouse.X);
+                    Canvas.SetTop(h, Mouse.GetPosition(canvas).Y - handle_size/2 - init_mouse.Y);
                     break;
                 default:
                     break;
@@ -374,6 +415,13 @@ namespace WpfApp1 {
             abs_rect.Y = Canvas.GetTop(bottom_right) + handle_size;
         }
 
+        private void AbsFromShape() {
+            abs_rect.x = Canvas.GetLeft(shape);
+            abs_rect.y = Canvas.GetTop(shape);
+            abs_rect.X = Canvas.GetLeft(shape) + shape.ActualWidth;
+            abs_rect.Y = Canvas.GetTop(shape) + shape.ActualHeight;
+        }
+
         public void HandlesFromAbs() {
             Canvas.SetLeft(top_left, abs_rect.x);
             Canvas.SetTop(top_left, abs_rect.y);
@@ -422,6 +470,8 @@ namespace WpfApp1 {
                 h.Stroke = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Transparent);
                 h.Fill = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Transparent);
             }
+            dash.IsEnabled = false; 
+
         }
 
         public void Enable() {
@@ -430,6 +480,10 @@ namespace WpfApp1 {
                 h.Stroke = stroke_enabled;
                 h.Fill = fill_enabled;
             }
+            dash.IsEnabled = true;
+
+
+
         }
 
     }
