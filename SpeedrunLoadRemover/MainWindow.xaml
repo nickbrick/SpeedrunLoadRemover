@@ -48,7 +48,7 @@
                     <Label Content="Match:" VerticalAlignment="Center"/>
                     <Ellipse x:Name="led_matched" Fill="#FFF4F4F5" Stroke="Black" Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </StackPanel>
-                <Button x:Name="btnTest" Content="Test" Click="btnTest_Click" Width="50" Height="25" Margin="5" IsEnabled="False"/>
+                <Button x:Name="btnTest" Content="Test" Click="btnTest_Click" Width="50" Height="25" Margin="5" IsEnabled="False" Visibility="Hidden"/>
 
             </StackPanel>
             <Border BorderBrush="LightGray" BorderThickness="1" Margin="2,15,10,4.4" MinWidth="200" RenderTransformOrigin="0.5,0.5" MinHeight="100" VerticalAlignment="Bottom" Grid.Row="2" Grid.Column="2" Height="100" HorizontalAlignment="Right" Width="201">
@@ -58,7 +58,7 @@
         <ProgressBar x:Name="progress_bar" Grid.ColumnSpan="3" Height="27" Margin="10,10,40,10" Grid.Row="3" VerticalAlignment="Bottom" ValueChanged="progress_bar_ValueChanged"/>
         <Label x:Name="lbl_eta" Grid.Row="3" Grid.Column="1" Content="" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         <Button x:Name="btnAbout" Content="?" Click="btnAbout_Click" HorizontalAlignment="Right" VerticalAlignment="Center" Grid.Row="3" Grid.Column="3" Margin="0,0,10,0" Width="20" Height="20"></Button>
-        <TextBox x:Name="txt_time" HorizontalAlignment="Left" Height="23" Margin="10,423,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="156"/>
+        <TextBox x:Name="txt_time" HorizontalAlignment="Left" Height="23" Margin="80,45.6,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="168" IsReadOnly="True" Grid.Column="1" Grid.Row="1" Grid.RowSpan="2"/>
 
     </Grid>
     <Window.TaskbarItemInfo>

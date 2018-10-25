@@ -68,6 +68,9 @@ namespace SLR {
                 frame_idx = (int)(Math.Round(mediaPlayer.Position.TotalMilliseconds * framerate / 1000));
             Mat frame = new Mat();
             VideoCapture cap = new VideoCapture(video_path);
+            if (frame_idx >= video_frame_count) {
+                frame_idx = video_frame_count - 1;
+            }
             cap.SetCaptureProperty(CapProp.PosFrames, frame_idx);
             frame = cap.QueryFrame();
             frame = new Mat(frame, (selection.prop_rect * video_natural_dimensions).ToRectangle());
@@ -405,15 +408,15 @@ namespace SLR {
 
         private void sliderSyncTimer_Tick(object sender, EventArgs e) {
             if (is_playing) sldrVideoTime.Value = mediaPlayer.Position.TotalMilliseconds;
-            int frame_idx = (int)(Math.Round(mediaPlayer.Position.TotalMilliseconds * framerate / 1000))+1;
-            if (loading_frames_queue.Contains(frame_idx)) {
+            int frame_idx = (int)(Math.Round(mediaPlayer.Position.TotalMilliseconds * framerate / 1000));
+            if (loading_frames_queue.Contains(frame_idx+1)) {
                 led_matched.Fill = Brushes.Green;
             }
             else {
                 led_matched.Fill = Brushes.Transparent;
 
             }
-            txt_time.Text = mediaPlayer.Position + " " + frame_idx;
+            txt_time.Text = string.Format("{0:h\\:mm\\:ss\\.fff}", mediaPlayer.Position) + " " + frame_idx;
         }
 
         private void sldrVideoTime_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e) {
