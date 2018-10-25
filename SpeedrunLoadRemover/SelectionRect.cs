@@ -10,7 +10,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Shapes;
 
-namespace WpfApp1 {
+namespace SLR {
     class LogicalRect {
         public double x { get; set; }
         public double y { get; set; }

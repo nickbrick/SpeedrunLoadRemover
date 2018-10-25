@@ -11,7 +11,7 @@ using Emgu.CV.CvEnum;
 using System.Collections.Concurrent;
 using YoutubeExplode;
 
-namespace WpfApp1 {
+namespace SLR {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
