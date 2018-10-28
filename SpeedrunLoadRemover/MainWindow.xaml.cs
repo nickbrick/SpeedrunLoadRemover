@@ -78,12 +78,12 @@ namespace SLR {
             cap.Dispose();
             Mat templ = template;
             double error = 0;
-            
+            /*
             CvInvoke.NamedWindow("Ltemp");
             CvInvoke.NamedWindow("frame");
             CvInvoke.Imshow("Ltemp", templ);
             CvInvoke.Imshow("frame", frame);
-
+            */
             int result_cols = frame.Cols - template.Cols + 1;
             int result_rows = frame.Rows - template.Rows + 1;
             if (result_cols != 1 || result_rows != 1) { MessageBox.Show("Template is not the same size as frame.", "Error", MessageBoxButton.OK, MessageBoxImage.Error); return int.MaxValue; }
