@@ -44,7 +44,7 @@ namespace SLR {
         LogicalRect last_selection_prop;
         double reduction_factor = 1;
         System.Threading.CancellationTokenSource count_cancellation_source = new System.Threading.CancellationTokenSource();
-
+        string image_directory;
 
 
 
@@ -174,6 +174,11 @@ namespace SLR {
                 sldrVideoTime.SelectionStart = run_start_msec;
                 sldrVideoTime.SelectionEnd = run_end_msec;
             }
+            image_directory = System.IO.Path.GetDirectoryName(video_path) + "\\" + System.IO.Path.GetFileNameWithoutExtension(video_path);
+            System.IO.Directory.CreateDirectory(image_directory);
+            System.IO.Directory.CreateDirectory(image_directory+"\\match");
+            System.IO.Directory.CreateDirectory(image_directory+"\\not-match");
+
         }
 
         private void UpdateRunLengths() {
@@ -218,6 +223,11 @@ namespace SLR {
                     if (error < baseline_error) { // is a match
                         loading_frames++;
                         loading_frames_queue.Enqueue(i + 1);
+                        CvInvoke.Imwrite(image_directory + "\\match\\" + i.ToString("D6") + ".png", frame);
+                    }
+                    else {
+                        CvInvoke.Imwrite(image_directory + "\\not-match\\" + i.ToString("D6") + ".png", frame);
+
                     }
 
                 }
