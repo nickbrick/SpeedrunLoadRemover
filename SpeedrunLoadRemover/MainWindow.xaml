@@ -27,7 +27,9 @@
         <fsldr:FormattedSlider x:Name="sldrVideoTime" Margin="10,20.2,10,3" Grid.Row="1" VerticalAlignment="Top" PreviewMouseLeftButtonUp="sldrVideoTime_PreviewMouseLeftButtonUp" PreviewMouseLeftButtonDown="sldrVideoTime_PreviewMouseLeftButtonDown" AutoToolTipPlacement="TopLeft" Maximum="1" TickPlacement="TopLeft" AutoToolTipFormat="{}{0}" IsMoveToPointEnabled="True" ValueChanged="sldrVideoTime_ValueChanged" IsEnabled="False" Grid.ColumnSpan="3" Height="24" IsSelectionRangeEnabled="True" TickFrequency="0" />
 
         <ListBox x:Name="lvList" Margin="10,15,9.6,4.4" Grid.Row="2" MinWidth="290"/>
-        <StackPanel VerticalAlignment="Center" Margin="2.4,10,2.2,10" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Center">
+        <StackPanel VerticalAlignment="Center" Margin="2.4,-5,2.2,-5" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Center">
+            <TextBox x:Name="txt_time" HorizontalAlignment="Center" Height="23" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="168" IsReadOnly="True"/>
+
             <DockPanel Margin="8" HorizontalAlignment="Center">
                 <Button x:Name="btnPlay" Content="Play" Click="btnPlay_Click" Width="50" Height="25" Margin="5" IsEnabled="False"/>
                 <RepeatButton x:Name="btnMoveBack" Content="&lt;" Click="btnMoveBack_Click" Width="50" Height="25" Margin="5" IsEnabled="False" Delay="200" Interval="50"/>
@@ -58,7 +60,6 @@
         <ProgressBar x:Name="progress_bar" Grid.ColumnSpan="3" Height="27" Margin="10,10,40,10" Grid.Row="3" VerticalAlignment="Bottom" ValueChanged="progress_bar_ValueChanged"/>
         <Label x:Name="lbl_eta" Grid.Row="3" Grid.Column="1" Content="" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         <Button x:Name="btnAbout" Content="?" Click="btnAbout_Click" HorizontalAlignment="Right" VerticalAlignment="Center" Grid.Row="3" Grid.Column="3" Margin="0,0,10,0" Width="20" Height="20"></Button>
-        <TextBox x:Name="txt_time" HorizontalAlignment="Left" Height="23" Margin="80,45.6,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="168" IsReadOnly="True" Grid.Column="1" Grid.Row="1" Grid.RowSpan="2"/>
 
     </Grid>
     <Window.TaskbarItemInfo>
