@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:SLR"
         xmlns:fsldr="clr-namespace:FormattedSliderDemo"
         mc:Ignorable="d"
-        Title="Speedrun Load Remover 0.4" Height="720" Width="1051.6" MinWidth="1050" MinHeight="720" SizeChanged="Window_SizeChanged" PreviewKeyDown="Window_PreviewKeyDown" PreviewKeyUp="Window_PreviewKeyUp">
+        Title="Speedrun Load Remover 1.0" Height="720" Width="1051.6" MinWidth="1050" MinHeight="720" SizeChanged="Window_SizeChanged" PreviewKeyDown="Window_PreviewKeyDown" PreviewKeyUp="Window_PreviewKeyUp">
     <Grid x:Name="grid">
         <Grid.RowDefinitions>
             <RowDefinition Height="449*"/>
