@@ -7,6 +7,6 @@ Powered by [Emgu CV](http://www.emgu.com), [libvideo](http://github.com/i3arnon/
 3. Select an appropriate subregion of your video (What makes an appropriate subregion?).
 4. Navigate to and mark the frame to be used as the template for the game's loading screen.
 5. Calculate the loadless time.
-## Latest build
-[Version 0.4.2](https://www.dropbox.com/s/ejibt7vasmw5c0k/slr_0_4_2.zip?dl=1)
+## Download
+[Version 1.0.0](https://github.com/nickbrick/SpeedrunLoadRemover/releases/tag/1.0.0)
 Windows 32 and 64 bit.
