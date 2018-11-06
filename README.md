@@ -12,4 +12,4 @@ Powered by [Emgu CV](http://www.emgu.com), [libvideo](http://github.com/i3arnon/
 [Version 1.0.0](https://github.com/nickbrick/SpeedrunLoadRemover/releases/tag/1.0.0)
 Windows 32 and 64 bit.
 ## Documentation
-Coming soon™.
+Check the [wiki](https://github.com/nickbrick/SpeedrunLoadRemover/wiki).
