@@ -9,7 +9,7 @@ Powered by [Emgu CV](http://www.emgu.com), [libvideo](http://github.com/i3arnon/
 4. Navigate to and mark the frame to be used as the template for the game's loading screen.
 5. Calculate the loadless time.
 ## Download
-[Version 1.0.0](https://github.com/nickbrick/SpeedrunLoadRemover/releases/tag/1.0.0)
+[Version 1.0.0](https://github.com/nickbrick/SpeedrunLoadRemover/releases/download/1.0.0/slr_1_0_0.zip)
 Windows 32 and 64 bit.
 ## Documentation
 Check the [wiki](https://github.com/nickbrick/SpeedrunLoadRemover/wiki).
